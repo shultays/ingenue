@@ -32,9 +32,88 @@ typedef enum{
   MULTIPLICATION,
   DIVISION,
   MODULO,
+  EQUALITY,
+  INEQUALITY,
+  GREATER_THAN,
+  GREATER_OR_EQUAL,
+  LESS_THAN,
+  LESS_OR_EQUAL,
   MAXOP
 } opType;
 
+int operatorPrecedences[] = {
+	-1,
+	1, //+
+	1, //-
+	2, //mul
+	2, //dif
+	2, //mod
+
+
+	3, //==
+	3, //!=
+	3, //>
+	3, //>=
+	3, //<
+	3, //<=
+	
+	-1
+};
+
+
+char *opTypeString[] = {
+	"err",
+	"+",
+	"-",
+	"*",
+	"/",
+	"%",
+	"==",
+	"!=",
+	">",
+	">=",
+	"<",
+	"<=",
+};
+
+int compare(int op, int a, int b)
+{
+	switch (op){
+	case EQUALITY:
+		return a == b;
+	case INEQUALITY:
+		return a != b;
+	case GREATER_THAN:
+		return a > b;
+	case GREATER_OR_EQUAL:
+		return a >= b;
+	case LESS_THAN:
+		return a < b;
+	case LESS_OR_EQUAL:
+		return a <= b;
+	}
+	printf("err");
+	return 0;
+}
+int comparef(int op, float a, float b)
+{
+	switch (op){
+	case EQUALITY:
+		return a == b;
+	case INEQUALITY:
+		return a != b;
+	case GREATER_THAN:
+		return a > b;
+	case GREATER_OR_EQUAL:
+		return a >= b;
+	case LESS_THAN:
+		return a < b;
+	case LESS_OR_EQUAL:
+		return a <= b;
+	}
+	printf("err");
+	return 0;
+}
 
 void convert(Value *v, int newType){
   switch(v->type){
@@ -172,7 +251,6 @@ Value* interpereteValue(Token *t){
           nValueExtraBuff+=sizeof(float);
         break;
         case STRING:
-          v = valueBuff+nValueBuff++;
           v->type = STRING;
           v->extra = valueExtraBuff+nValueExtraBuff;
           strcpy((char*)v->extra, (char*)v2->extra);
@@ -223,9 +301,22 @@ Value* interpereteValue(Token *t){
               char *c2=(char*)v2->extra, *c3=(char*)v3->extra;
               v2->extra = valueExtraBuff+nValueExtraBuff;
               nValueExtraBuff+=sprintf((char*)v2->extra, "%s%s", c2, c3)+1;
-
             }
           break;
+
+		  case EQUALITY:
+		  case INEQUALITY:
+		  case GREATER_THAN:
+		  case GREATER_OR_EQUAL:
+		  case LESS_THAN:
+		  case LESS_OR_EQUAL:
+		  {
+						   char *c2 = (char*)v2->extra, *c3 = (char*)v3->extra;
+						   v2->type = INTEGER; 
+						   *((int*)v2->extra) = compare((int)t->extra, strcmp(c2, c3), 0);
+
+		  }
+		break;
           default:
             //ERR
           break;
@@ -245,6 +336,14 @@ Value* interpereteValue(Token *t){
           case DIVISION:
             *((float*)v2->extra) /= *((float*)v3->extra);
           break;
+		  case EQUALITY:
+		  case INEQUALITY:
+		  case GREATER_THAN:
+		  case GREATER_OR_EQUAL:
+		  case LESS_THAN:
+		  case LESS_OR_EQUAL:
+			  v2->type = INTEGER;
+			  *((int*)v2->extra) = comparef((int)t->extra, *((float*)v2->extra), *((float*)v3->extra));
           default:
             //ERR
           break;
@@ -266,6 +365,14 @@ Value* interpereteValue(Token *t){
           break;
           case MODULO:
             *((int*)v2->extra) %= *((int*)v3->extra);
+
+		  case EQUALITY:
+		  case INEQUALITY:
+		  case GREATER_THAN:
+		  case GREATER_OR_EQUAL:
+		  case LESS_THAN:
+		  case LESS_OR_EQUAL:
+			  *((int*)v2->extra) = comparef((int)t->extra, *((int*)v2->extra), *((int*)v3->extra));
           break;
         }
         break;
@@ -285,27 +392,6 @@ Value* interpereteValue(Token *t){
 char variableNames[128][32];
 int currentVar=0;
 
-int operatorPrecedences[] = {
-  -1,
-  0,
-  1,
-  1,
-  2,
-  2,
-  2,
-  
-  -1
-};
-
-
-char *opTypeString[] = {
-  "err",
-  "+",
-  "-",
-  "*",
-  "/",
-  "%",
-};
 
 int getVarIndex(char *c){
   for(int i=0; i<currentVar; i++) if(strcmp(variableNames[i], c)==0) return i;

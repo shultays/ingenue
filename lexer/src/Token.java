@@ -45,7 +45,7 @@ public class Token {
     }
 
 	public void interprete() {
-		if(def != null && def.interpreter != null) def.interprete();
+		//if(def != null && def.interpreter != null) def.interprete();
         for(Token t : children) t.interprete();
 		
 	}

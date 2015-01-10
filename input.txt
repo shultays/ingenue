@@ -1,0 +1,103 @@
+program
+    statement
+        value
+            assignment
+                variable a
+                value
+                    string '123'
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        value
+            assignment
+                variable e
+                value
+                    variable a
+                    operator +
+                    integer 3
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        value
+            assignment
+                variable b
+                value
+                    integer 5
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        value
+            assignment
+                variable c
+                value
+                    integer 2
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        value
+            assignment
+                variable c
+                value
+                    variable c
+                    operator +
+                    integer 2
+                    operator *
+                    integer 3
+                    operator +
+                    variable b
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        ifcond
+            value
+                variable c
+                operator ==
+                integer 2
+            /value
+            statement
+                value
+                    assignment
+                        variable d
+                        value
+                            integer 1
+                        /value
+                    /assignment
+                /value
+            /statement
+            else
+            /else
+            statement
+                value
+                    assignment
+                        variable d
+                        value
+                            integer 2
+                        /value
+                    /assignment
+                /value
+            /statement
+        /ifcond
+    /statement
+    statement
+        value
+            assignment
+                variable f
+                value
+                    string 'dsa'
+                    operator >=
+                    string 'dsa'
+                /value
+            /assignment
+        /value
+    /statement
+/program

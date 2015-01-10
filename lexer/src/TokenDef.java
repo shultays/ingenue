@@ -10,7 +10,7 @@ public class TokenDef implements Validator{
 	public int validate(String str) {
 		return func.validate(str);
 	}*/
-	public Interpreter interpreter;
+	//public Interpreter interpreter;
 
     public int validate(Token parent, String str){
         return func.validate(parent, str);

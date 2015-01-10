@@ -17,9 +17,12 @@ int main(){
 
 
   interpreteFlow(root);
-  getVar("a");
-  getVar("b");
-  getVar("c");
-  getVar("d");
+  for (int i = 'a'; i <= 'z'; i++)
+  {
+	  char buf[] = "a";
+	  buf[0] = i;
+	  getVar(buf);
+  }
+  system("pause");
   return 0; 
 }

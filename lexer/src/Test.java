@@ -105,7 +105,7 @@ public class Test {
 
 
                      parent.children.add(t);
-                	
+
                 }
                 return i+1;
 
@@ -200,7 +200,7 @@ public class Test {
         root.interprete();
         //String str = "func asd( a b c) {c = a+b ; if(a>0)return a; else return b;} asd(1 2);";
         //System.out.println(str+"\n");
-        str = "b=\'asd\' ;c =2; ";
+        str = "a='123';e=a+3;b = 5;c =2;c = c+2*3+b;if(c==2) d = 1; else d = 2; f = 'asd'>'dsa';";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);
