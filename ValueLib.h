@@ -4,8 +4,8 @@
 #include "TokenLib.h"
 
 typedef struct{
-  int type;
-  void *extra;
+	int type;
+	void *extra;
 } Value;
 
 

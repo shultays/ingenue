@@ -4,19 +4,7 @@ program
             assignment
                 variable a
                 value
-                    string '123'
-                /value
-            /assignment
-        /value
-    /statement
-    statement
-        value
-            assignment
-                variable e
-                value
-                    variable a
-                    operator +
-                    integer 3
+                    integer 1
                 /value
             /assignment
         /value
@@ -26,78 +14,70 @@ program
             assignment
                 variable b
                 value
-                    integer 5
+                    integer 1
                 /value
             /assignment
         /value
     /statement
     statement
-        value
-            assignment
-                variable c
-                value
-                    integer 2
-                /value
-            /assignment
-        /value
-    /statement
-    statement
-        value
-            assignment
-                variable c
-                value
-                    variable c
-                    operator +
-                    integer 2
-                    operator *
-                    integer 3
-                    operator +
-                    variable b
-                /value
-            /assignment
-        /value
-    /statement
-    statement
-        ifcond
+        forloop
             value
-                variable c
-                operator ==
-                integer 2
+                assignment
+                    variable i
+                    value
+                        integer 0
+                    /value
+                /assignment
+            /value
+            value
+                variable i
+                operator <
+                integer 10
+            /value
+            value
+                assignment
+                    variable i
+                    value
+                        variable i
+                        operator +
+                        integer 1
+                    /value
+                /assignment
             /value
             statement
-                value
-                    assignment
-                        variable d
-                        value
-                            integer 1
-                        /value
-                    /assignment
-                /value
+                statement
+                    value
+                        assignment
+                            variable c
+                            value
+                                variable a
+                            /value
+                        /assignment
+                    /value
+                /statement
+                statement
+                    value
+                        assignment
+                            variable a
+                            value
+                                variable a
+                                operator +
+                                variable b
+                            /value
+                        /assignment
+                    /value
+                /statement
+                statement
+                    value
+                        assignment
+                            variable b
+                            value
+                                variable c
+                            /value
+                        /assignment
+                    /value
+                /statement
             /statement
-            else
-            /else
-            statement
-                value
-                    assignment
-                        variable d
-                        value
-                            integer 2
-                        /value
-                    /assignment
-                /value
-            /statement
-        /ifcond
-    /statement
-    statement
-        value
-            assignment
-                variable f
-                value
-                    string 'dsa'
-                    operator >=
-                    string 'dsa'
-                /value
-            /assignment
-        /value
+        /forloop
     /statement
 /program

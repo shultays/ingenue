@@ -10,19 +10,43 @@
 Token *root;
 
 int main(){
-  int i;
-  loadFile("input.txt");
-  buildProgram(&root);
-  print(root, 0);
+	float a = 1;
+	float b = 1;
+	float c;
+	float i;
+	float d;
+
+	a = 11;
+	b = 1;
+	c = 3;
+	d = 5;
+	while (b <= a)
+	{
+		d = d + b;
+		b += c;
+	}
 
 
-  interpreteFlow(root);
-  for (int i = 'a'; i <= 'z'; i++)
-  {
-	  char buf[] = "a";
-	  buf[0] = i;
-	  getVar(buf);
-  }
-  system("pause");
-  return 0; 
+
+
+	printf("%f %f %f %f\n", a, b, c, d);
+	system("pause");
+
+
+	
+	return 0;
+	loadFile("input.txt");
+	buildProgram(&root);
+	print(root, 0, 0);
+
+
+	interpreteFlow(root);
+	for (int i = 'a'; i <= 'z'; i++)
+	{
+		char buf[] = "a";
+		buf[0] = i;
+		getVar(buf);
+	}
+	system("pause");
+	return 0; 
 }

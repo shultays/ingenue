@@ -3,6 +3,8 @@
 
 #include <stdio.h>
 
+#define FALSE 0
+#define TRUE (!FALSE)
 
 extern char buff[128];
 extern FILE *input;
@@ -13,6 +15,8 @@ void getToken();
 
 void loadFile(char *c);
 
+#define PERROR(s) do { printf("ERROR %s %s %d\n%s\n", __FILE__, __FUNCTION__, __LINE__, s); system("pause");} while(FALSE)
 
+#define PERRORTOK(s, t) do { printf("ERROR %s %s %d TOK:%d\n%s\n", __FILE__, __FUNCTION__, __LINE__, t->line, s); system("pause");} while(FALSE)
 
 #endif
