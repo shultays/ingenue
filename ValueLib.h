@@ -17,6 +17,7 @@ int getOpType(char *c);
 char* getOpTypeString(int t);
 
 void configValueToken(Token *t);
+void buildPostPreOpToken(Token *t);
 
 Value* interpereteValue(Token *t);
 

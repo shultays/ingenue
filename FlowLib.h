@@ -23,9 +23,12 @@ typedef struct{
 	Token *statements;
 }WhileExtra;
 
+
+
 void configIfCondToken(Token *t);
 void configWhileToken(Token *t);
 void configForToken(Token *t);
+
 
 int interpreteFlow(Token *t); 
 #endif

@@ -10,7 +10,7 @@
 Token *root;
 
 int main(){
-	float a = 1;
+	/*float a = 1;
 	float b = 1;
 	float c;
 	float i;
@@ -35,6 +35,7 @@ int main(){
 
 	
 	return 0;
+	*/
 	loadFile("input.txt");
 	buildProgram(&root);
 	print(root, 0, 0);

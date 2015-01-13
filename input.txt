@@ -11,73 +11,48 @@ program
     /statement
     statement
         value
+            variable_withpost
+                variable a
+                singleoperator ++
+            /variable_withpost
+        /value
+    /statement
+    statement
+        value
+            variable_withpre
+                singleoperator ++
+                variable a
+            /variable_withpre
+        /value
+    /statement
+    statement
+        value
             assignment
                 variable b
                 value
                     integer 1
+                    operator +
+                    variable_withpost
+                        variable a
+                        singleoperator ++
+                    /variable_withpost
                 /value
             /assignment
         /value
     /statement
     statement
-        forloop
-            value
-                assignment
-                    variable i
-                    value
-                        integer 0
-                    /value
-                /assignment
-            /value
-            value
-                variable i
-                operator <
-                integer 10
-            /value
-            value
-                assignment
-                    variable i
-                    value
-                        variable i
-                        operator +
-                        integer 1
-                    /value
-                /assignment
-            /value
-            statement
-                statement
-                    value
-                        assignment
-                            variable c
-                            value
-                                variable a
-                            /value
-                        /assignment
-                    /value
-                /statement
-                statement
-                    value
-                        assignment
-                            variable a
-                            value
-                                variable a
-                                operator +
-                                variable b
-                            /value
-                        /assignment
-                    /value
-                /statement
-                statement
-                    value
-                        assignment
-                            variable b
-                            value
-                                variable c
-                            /value
-                        /assignment
-                    /value
-                /statement
-            /statement
-        /forloop
+        value
+            assignment
+                variable c
+                value
+                    integer 1
+                    operator +
+                    variable_withpre
+                        singleoperator ++
+                        variable a
+                    /variable_withpre
+                /value
+            /assignment
+        /value
     /statement
 /program

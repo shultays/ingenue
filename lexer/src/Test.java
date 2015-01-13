@@ -200,7 +200,7 @@ public class Test {
         root.interprete();
         //String str = "func asd( a b c) {c = a+b ; if(a>0)return a; else return b;} asd(1 2);";
         //System.out.println(str+"\n");
-        str = "a = 1; b = 1; for(i=0; i<10; i=i+1){c = a; a = a + b; b = c;}";
+        str = "a = 1; a++; ++a; b = 1 + a++; c = 1 + ++a;";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);

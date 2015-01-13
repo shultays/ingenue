@@ -23,10 +23,13 @@ char *tokenTypeString[] = {
 	"else",
 	"whileloop",
 	"break",
-	"forloop"
+	"forloop",
+	"variable_withpost",
+	"variable_withpre",
+	"singleoperator"
 };
 
-tokenType singleTokens[] = {INTEGER, FLOAT, STRING, OPERATOR, VARIABLE};
+tokenType singleTokens[] = {INTEGER, FLOAT, STRING, OPERATOR, VARIABLE, SINGLE_OPERATOR};
 
 
 int isSingle(tokenType t){
@@ -79,7 +82,11 @@ int buildProgram(Token **place){
 			case VARIABLE:
 				(*place)->extra = (void*)(getVarIndex(buff));
 			break;
-				
+			case SINGLE_OPERATOR:
+			{
+				(*place)->extra = (void*)(getOpType(buff));
+			}
+			break;
 		}; 
 	}else{
 		Token **tt = &((*place)->firstChild);
@@ -97,6 +104,8 @@ int buildProgram(Token **place){
 		configIfCondToken(*place);		
 	}else if ((*place)->type == FOR){
 		configForToken(*place);
+	}else if ((*place)->type == VAR_WITH_POST_OP || (*place)->type == VAR_WITH_PRE_OP){
+		buildPostPreOpToken(*place);
 	}
 	return 1;
 }

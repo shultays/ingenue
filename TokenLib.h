@@ -17,6 +17,9 @@ typedef enum {
 	WHILE,
 	BREAK,
 	FOR,
+	VAR_WITH_POST_OP,
+	VAR_WITH_PRE_OP,
+	SINGLE_OPERATOR,
 	MAXTOKEN
 } tokenType;
 

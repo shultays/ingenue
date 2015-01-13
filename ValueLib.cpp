@@ -40,6 +40,15 @@ typedef enum{
 	GREATER_OR_EQUAL,
 	LESS_THAN,
 	LESS_OR_EQUAL,
+
+	POST_INC,
+	PRE_INC,
+	POST_DEC,
+	PRE_DEC,
+
+	INC,
+	DEC,
+
 	MAXOP
 } opType;
 
@@ -58,7 +67,15 @@ int operatorPrecedences[] = {
 	3, //>=
 	3, //<
 	3, //<=
-	
+
+	10, //i++
+	10, //++i
+	10, //i--
+	10, //--i
+
+	10, //special
+	10, //special
+
 	-1
 };
 
@@ -76,6 +93,13 @@ char *opTypeString[] = {
 	">=",
 	"<",
 	"<=",
+
+	"", //these are special
+	"",
+	"",
+	"",
+	"++",
+	"--",
 };
 
 int compare(int op, int a, int b)
@@ -313,7 +337,7 @@ Value* interpreteAssignment(Token *t){
 				*((float*)v2->extra) = *((float*)v->extra);
 			break;
 			default:
-				PERROR("");
+				PERRORTOK("", t);
 			break;
 		}
 	}
@@ -389,7 +413,7 @@ Value* interpereteValue(Token *t){
 		case OPERATOR:
 			v2 = valueBuff+nValueBuff-2;
 			v3 = valueBuff+nValueBuff-1;
-
+			int type = (int)t->extra;
 			if(v2->type < v3->type){
 				convert(v2, (int)v3->type);
 			}else if(v2->type > v3->type){
@@ -446,6 +470,7 @@ Value* lastValue(){
 	if(nValueBuff==0) return NULL;
 	else return valueBuff + nValueBuff-1;
 }
+
 void configValueToken(Token *t){
 	std::queue <Token*> newOrder;
 	std::stack <Token*> opStack;
@@ -481,6 +506,34 @@ void configValueToken(Token *t){
 	}
 	*temp=NULL;
 }
+
+void buildPostPreOpToken(Token *t){
+	if (t->type == VAR_WITH_PRE_OP)
+	{
+		if (t->firstChild->type == INC)
+		{
+			t->extra = (void*)PRE_INC;
+		}
+		else
+		{
+			t->extra = (void*)PRE_DEC;
+		}
+	}
+	else
+	{
+		if (t->firstChild->nextSibling->type == INC)
+		{
+			t->extra = (void*)POST_INC;
+		}
+		else
+		{
+			t->extra = (void*)POST_DEC;
+		}
+	}
+	t->type = OPERATOR;
+}
+
+
 void resetCalc(){
 
 	nValueExtraBuff=nValueBuff=0;
