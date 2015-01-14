@@ -213,7 +213,7 @@ public class Test {
 
         root.interprete();
 
-        str = "func t(a){a = 1;} t(b, c, d); a = 1; a++; ++a; b = 1 + a++; c = 1 + ++a; d = a + b + c++; e = c-- + a--;";
+        str = "a = 5;  b = 3.0; c = a + b; d = a++; if(a > 0) { d = a + b; } else d = 0;";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);

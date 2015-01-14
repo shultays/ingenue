@@ -4,25 +4,9 @@ program
             assignment
                 variable a
                 value
-                    integer 1
+                    integer 5
                 /value
             /assignment
-        /value
-    /statement
-    statement
-        value
-            variable_withpost
-                variable a
-                singleoperator ++
-            /variable_withpost
-        /value
-    /statement
-    statement
-        value
-            variable_withpre
-                singleoperator ++
-                variable a
-            /variable_withpre
         /value
     /statement
     statement
@@ -30,12 +14,7 @@ program
             assignment
                 variable b
                 value
-                    integer 1
-                    operator +
-                    variable_withpost
-                        variable a
-                        singleoperator ++
-                    /variable_withpost
+                    float 3.0
                 /value
             /assignment
         /value
@@ -45,12 +24,9 @@ program
             assignment
                 variable c
                 value
-                    integer 1
+                    variable a
                     operator +
-                    variable_withpre
-                        singleoperator ++
-                        variable a
-                    /variable_withpre
+                    variable b
                 /value
             /assignment
         /value
@@ -60,12 +36,8 @@ program
             assignment
                 variable d
                 value
-                    variable a
-                    operator +
-                    variable b
-                    operator +
                     variable_withpost
-                        variable c
+                        variable a
                         singleoperator ++
                     /variable_withpost
                 /value
@@ -73,21 +45,38 @@ program
         /value
     /statement
     statement
-        value
-            assignment
-                variable e
+        ifcond
+            value
+                variable a
+                operator >
+                integer 0
+            /value
+            statement
+                statement
+                    value
+                        assignment
+                            variable d
+                            value
+                                variable a
+                                operator +
+                                variable b
+                            /value
+                        /assignment
+                    /value
+                /statement
+            /statement
+            else
+            /else
+            statement
                 value
-                    variable_withpost
-                        variable c
-                        singleoperator --
-                    /variable_withpost
-                    operator +
-                    variable_withpost
-                        variable a
-                        singleoperator --
-                    /variable_withpost
+                    assignment
+                        variable d
+                        value
+                            integer 0
+                        /value
+                    /assignment
                 /value
-            /assignment
-        /value
+            /statement
+        /ifcond
     /statement
 /program

@@ -383,7 +383,8 @@ Value* interpereteValue(Token *t){
 			break;
 		case ASSIGNMENT:
 		{
-			v2 = interpereteValue(t->firstChild->nextSibling);
+			interpereteValue(t->firstChild->nextSibling);
+			v2 = valueBuff + nValueBuff;
 			v = interpreteAssignment(t, v2->type, v2->extra);
 			break;
 		}
@@ -400,7 +401,7 @@ Value* interpereteValue(Token *t){
 					nValueExtraBuff+=sizeof(int);
 				break;
 				case FLOAT:
-					v->type = INTEGER;
+					v->type = FLOAT;
 					v->extra = valueExtraBuff+nValueExtraBuff;
 					*((float*)v->extra) = *((float*)v2->extra);
 					nValueExtraBuff+=sizeof(float);

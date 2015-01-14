@@ -79,6 +79,9 @@
     <ClCompile Include="src\Tools.cpp" />
     <ClCompile Include="src\ValueLib.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="input.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
