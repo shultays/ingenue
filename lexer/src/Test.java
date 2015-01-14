@@ -39,7 +39,8 @@ public class Test {
                 ta.fromString("<<"),
                 ta.fromString(">>"),
                 ta.fromString("^"),
-                ta.fromString("==")));
+                ta.fromString("=="))
+        );
         
         ta.addToken("underscore", ta.fromString("_"));
 
