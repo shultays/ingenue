@@ -92,7 +92,7 @@ int buildProgram(Token **place){
 		Token **tt = &((*place)->firstChild);
 		while(1){
 			if(buildProgram(tt) == 0) break;
-			tt = &((*tt)->nextSibling);
+			while(*tt) tt = &((*tt)->nextSibling);
 		}
 	}
 	
@@ -105,16 +105,18 @@ int buildProgram(Token **place){
 	}else if ((*place)->type == FOR){
 		configForToken(*place);
 	}else if ((*place)->type == VAR_WITH_POST_OP || (*place)->type == VAR_WITH_PRE_OP){
-		buildPostPreOpToken(*place);
+		buildPostPreOpToken(place);
 	}
 	return 1;
 }
 
+int l;
+
 void print(Token *t, int tab, int line){
 	if(!t) return;
-	t->line = line;
-	printf("%d", line);
-	for(int i=0; i<tab; i++) printf("	");
+	t->line = l;
+	printf("%d", l++);
+	for(int i=0; i<tab; i++) printf("  ");
 	printf("%s ", tokenTypeString[t->type]);
 	switch(t->type){
 		case INTEGER:
@@ -144,7 +146,8 @@ void print(Token *t, int tab, int line){
 		print(extra->elsePart, tab + 1, ++line);
 		print(t->nextSibling, tab, ++line);
 	}else{
-		print(t->firstChild, tab + 1, ++line);
+		if (t->type != OPERATOR)
+			print(t->firstChild, tab + 1, ++line);
 		print(t->nextSibling, tab, ++line);
 	}
 

@@ -79,8 +79,13 @@ public class Test {
                 	if(str.charAt(i) == '\\') i+=2;
                 	else i++;
                 }
-                System.out.println("ok"+i+str.substring(0, i+1));
                 if(i>=str.length()) return INVALID;
+                if(parent != null){
+                    Token t = new Token();
+                    t.def = null;
+                    t.setStr(str.substring(0, i+1));
+                    parent.children.add(t);
+                }
                 return i+1;
 
             }
@@ -89,23 +94,18 @@ public class Test {
             public int validate(Token parent, String str) {
                 if(str.length() < 2) return INVALID;
                 if(str.charAt(0) != '\'') return INVALID;
-                System.out.println("ok");
                 int i=1;
                 while(i<str.length()){
                 	if(str.charAt(i) == '\'') break;
                 	if(str.charAt(i) == '\\') i+=2;
                 	else i++;
                 }
-                System.out.println("ok"+i+str.substring(0, i+1));
                 if(i>=str.length()) return INVALID;
                 if(parent != null){
                 	 Token t = new Token();
                      t.def = null;
                      t.setStr(str.substring(0, i+1));
-
-
                      parent.children.add(t);
-
                 }
                 return i+1;
 
@@ -200,7 +200,7 @@ public class Test {
         root.interprete();
         //String str = "func asd( a b c) {c = a+b ; if(a>0)return a; else return b;} asd(1 2);";
         //System.out.println(str+"\n");
-        str = "a = 1; a++; ++a; b = 1 + a++; c = 1 + ++a;";
+        str = "a = 1; a++; ++a; b = 1 + a++; c = 1 + ++a; d = a + b + c++; e = c-- + a--;";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);

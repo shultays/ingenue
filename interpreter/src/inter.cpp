@@ -10,32 +10,9 @@
 Token *root;
 
 int main(){
-	/*float a = 1;
-	float b = 1;
-	float c;
-	float i;
-	float d;
-
-	a = 11;
-	b = 1;
-	c = 3;
-	d = 5;
-	while (b <= a)
-	{
-		d = d + b;
-		b += c;
-	}
-
-
-
-
-	printf("%f %f %f %f\n", a, b, c, d);
-	system("pause");
-
+	int a, b, c, d, e;
 
 	
-	return 0;
-	*/
 	loadFile("input.txt");
 	buildProgram(&root);
 	print(root, 0, 0);

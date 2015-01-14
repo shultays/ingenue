@@ -55,4 +55,39 @@ program
             /assignment
         /value
     /statement
+    statement
+        value
+            assignment
+                variable d
+                value
+                    variable a
+                    operator +
+                    variable b
+                    operator +
+                    variable_withpost
+                        variable c
+                        singleoperator ++
+                    /variable_withpost
+                /value
+            /assignment
+        /value
+    /statement
+    statement
+        value
+            assignment
+                variable e
+                value
+                    variable_withpost
+                        variable c
+                        singleoperator --
+                    /variable_withpost
+                    operator +
+                    variable_withpost
+                        variable a
+                        singleoperator --
+                    /variable_withpost
+                /value
+            /assignment
+        /value
+    /statement
 /program

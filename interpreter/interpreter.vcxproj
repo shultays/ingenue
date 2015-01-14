@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{DDB76C9D-A5AD-441F-81DA-AB28D60710B2}</ProjectGuid>
-    <RootNamespace>Project1</RootNamespace>
+    <ProjectGuid>{D04D2676-5ED4-41DD-9EBC-E06063D51682}</ProjectGuid>
+    <RootNamespace>interpreter</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -38,13 +38,15 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);inc;</IncludePath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions)  _CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -65,17 +67,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\FlowLib.cpp" />
-    <ClCompile Include="..\..\inter.cpp" />
-    <ClCompile Include="..\..\TokenLib.cpp" />
-    <ClCompile Include="..\..\Tools.cpp" />
-    <ClCompile Include="..\..\ValueLib.cpp" />
+    <ClInclude Include="inc\FlowLib.h" />
+    <ClInclude Include="inc\TokenLib.h" />
+    <ClInclude Include="inc\Tools.h" />
+    <ClInclude Include="inc\ValueLib.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\FlowLib.h" />
-    <ClInclude Include="..\..\TokenLib.h" />
-    <ClInclude Include="..\..\Tools.h" />
-    <ClInclude Include="..\..\ValueLib.h" />
+    <ClCompile Include="src\FlowLib.cpp" />
+    <ClCompile Include="src\inter.cpp" />
+    <ClCompile Include="src\TokenLib.cpp" />
+    <ClCompile Include="src\Tools.cpp" />
+    <ClCompile Include="src\ValueLib.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

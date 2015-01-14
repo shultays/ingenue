@@ -94,14 +94,18 @@ char *opTypeString[] = {
 	"<",
 	"<=",
 
-	"", //these are special
-	"",
-	"",
-	"",
+	"post++", //these are special
+	"pre++",
+	"post--",
+	"pre--",
 	"++",
 	"--",
 };
 
+int isOperatorSingle(int op)
+{
+	return op >= POST_INC && op <= PRE_DEC;
+}
 int compare(int op, int a, int b)
 {
 	switch (op){
@@ -269,6 +273,49 @@ Value* interpereteFloatOperator(Token *t, Value *v2, Value *v3){
 	return v2;
 }
 
+Value* interpreteAssignment(Token *t, int type, void *extra){
+	Value *v2;
+	std::string name(getVarName((int)t->firstChild->extra));
+
+	if (!(v2 = variables[currentStack][name])){
+		v2 = variables[currentStack][name] = (Value*)malloc(sizeof(Value));
+		v2->type = ERROR;
+	}
+	if (type == STRING){
+		v2->type = STRING;
+		v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+		variablesStackBuffSize[currentStack] += strlen((char*)extra) + 1;
+		strcpy((char*)v2->extra, (char*)extra);
+	}
+	else{
+		if (v2->type != type){
+			v2->type = type;
+			switch (v2->type){
+				case INTEGER:
+					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+					variablesStackBuffSize[currentStack] += sizeof(int);
+					break;
+				case FLOAT:
+					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+					variablesStackBuffSize[currentStack] += sizeof(float);
+					break;
+			}
+		}
+		switch (v2->type){
+			case INTEGER:
+				*((int*)v2->extra) = *((int*)extra);
+				break;
+			case FLOAT:
+				*((float*)v2->extra) = *((float*)extra);
+				break;
+			default:
+				PERRORTOK("", t);
+				break;
+		}
+	}
+	return v2;
+}
+
 Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 	switch ((int)t->extra){
 		case ADDITION:
@@ -293,6 +340,26 @@ Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 		case LESS_THAN:
 		case LESS_OR_EQUAL:
 			*((int*)v2->extra) = comparef((int)t->extra, *((float*)v2->extra), *((float*)v3->extra));
+			break;
+		case PRE_INC:
+		case PRE_DEC:
+		case POST_INC:
+		case POST_DEC:
+		{
+			v2 = v3;
+			int old_val = *((int*)v2->extra);
+			int new_val;
+			if ((int)t->extra == POST_INC || (int)t->extra == PRE_INC){
+				new_val = old_val + 1;
+			 }else{
+				new_val = old_val - 1;
+			}
+			interpreteAssignment(t, INTEGER, &new_val);
+
+			if ((int)t->extra == PRE_INC || (int)t->extra == PRE_DEC){
+				*((int*)v2->extra) = new_val;
+			}
+		}
 		break;
 		default:
 			PERROR("");
@@ -301,52 +368,9 @@ Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 	return v2;
 }
 
-Value* interpreteAssignment(Token *t){
-	Value *v, *v2;
-	std::string name(getVarName((int)t->firstChild->extra));
-	interpereteValue(t->firstChild->nextSibling);
-	v = valueBuff + nValueBuff;
-	if (!(v2 = variables[currentStack][name])){
-		v2 = variables[currentStack][name] = (Value*)malloc(sizeof(Value));
-		v2->type = ERROR;
-	}
-	if (v->type == STRING){
-		v2->type = STRING;
-		v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-		variablesStackBuffSize[currentStack] += strlen((char*)v->extra) + 1;
-		strcpy((char*)v2->extra, (char*)v->extra);
-	}else{
-		if (v2->type != v->type){
-			v2->type = v->type;
-			switch (v2->type){
-				case INTEGER:
-					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-					variablesStackBuffSize[currentStack] += sizeof(int);
-				break;
-				case FLOAT:
-					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-					variablesStackBuffSize[currentStack] += sizeof(float);
-				break;
-			}
-		}
-		switch (v2->type){
-			case INTEGER:
-				*((int*)v2->extra) = *((int*)v->extra);
-			break;
-			case FLOAT:
-				*((float*)v2->extra) = *((float*)v->extra);
-			break;
-			default:
-				PERRORTOK("", t);
-			break;
-		}
-	}
-	return v2;
-}
-
 
 Value* interpereteValue(Token *t){
-	Value *v=NULL, *v2, *v3;
+	Value *v = NULL, *v2 = NULL, *v3 = NULL;
 	if(t==NULL) return NULL;
 	int nValueBuffOld=nValueBuff;
 	switch (t->type){
@@ -359,7 +383,8 @@ Value* interpereteValue(Token *t){
 			break;
 		case ASSIGNMENT:
 		{
-			v=interpreteAssignment(t);
+			v2 = interpereteValue(t->firstChild->nextSibling);
+			v = interpreteAssignment(t, v2->type, v2->extra);
 			break;
 		}
 		case VARIABLE:
@@ -411,27 +436,32 @@ Value* interpereteValue(Token *t){
 			nValueExtraBuff+=sizeof(float);
 		break;
 		case OPERATOR:
-			v2 = valueBuff+nValueBuff-2;
-			v3 = valueBuff+nValueBuff-1;
-			int type = (int)t->extra;
-			if(v2->type < v3->type){
-				convert(v2, (int)v3->type);
-			}else if(v2->type > v3->type){
-				convert(v3, (int)v2->type);
+			v3 = valueBuff + nValueBuff - 1;
+			if (!isOperatorSingle((int)t->extra))
+			{
+				v2 = valueBuff+nValueBuff-2;
+				int type = (int)t->extra;
+				if(v2->type < v3->type){
+					convert(v2, (int)v3->type);
+				}else if(v2->type > v3->type){
+					convert(v3, (int)v2->type);
+				}
 			}
-	
-			switch(v2->type){
+			switch (v3->type){
 				case STRING:
 					v = interpereteStringOperator(t, v2, v3);
-				break;
+					break;
 				case FLOAT:
 					v = interpereteFloatOperator(t, v2, v3);
-				break;
+					break;
 				case INTEGER:
 					v = interpereteIntegerOperator(t, v2, v3);
-				break;
+					break;
 			}
-			nValueBuff--;
+
+			if (!isOperatorSingle((int)t->extra))
+				nValueBuff--;
+			
 		break;
 	}
 	v2=interpereteValue(t->nextSibling);
@@ -507,10 +537,13 @@ void configValueToken(Token *t){
 	*temp=NULL;
 }
 
-void buildPostPreOpToken(Token *t){
+void buildPostPreOpToken(Token **place){
+
+	Token *t = *place;
+
 	if (t->type == VAR_WITH_PRE_OP)
 	{
-		if (t->firstChild->type == INC)
+		if ((int)t->firstChild->extra == INC)
 		{
 			t->extra = (void*)PRE_INC;
 		}
@@ -518,10 +551,12 @@ void buildPostPreOpToken(Token *t){
 		{
 			t->extra = (void*)PRE_DEC;
 		}
+		t->firstChild = t->firstChild->nextSibling;
+		t->firstChild->nextSibling = NULL;
 	}
 	else
 	{
-		if (t->firstChild->nextSibling->type == INC)
+		if ((int)t->firstChild->nextSibling->extra == INC)
 		{
 			t->extra = (void*)POST_INC;
 		}
@@ -529,8 +564,11 @@ void buildPostPreOpToken(Token *t){
 		{
 			t->extra = (void*)POST_DEC;
 		}
+		t->firstChild->nextSibling = NULL;
 	}
 	t->type = OPERATOR;
+	*place = t->firstChild;
+	(*place)->nextSibling = t;
 }
 
 
