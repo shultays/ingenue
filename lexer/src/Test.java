@@ -126,16 +126,16 @@ public class Test {
         ta.addToken("variable_withpost", 
                 ta.concat("variable","singleoperator")
             );
-        ta.addToken("negate_value", 
-                ta.concat(ta.fromString("-"),"value"))
-            ;
+
         ta.addToken("variable_withpre", 
                 ta.concat("singleoperator", "variable")
             );
+
+        ta.addToken(true, "unary", ta.oneOf(ta.fromString("-"), ta.fromString("+"), ta.fromString("!"))).alias = "singleoperator";
         
         ta.addToken("value_one",
                 ta.oneOf("assignment","funccall","variable","integer","float","string", "variable_withpre",
-                        "variable_withpost", "negate_value",ta.concat("p_left", "value", "p_right"))
+                        "variable_withpost", ta.concat("unary", "value_one"),ta.concat("p_left", "value", "p_right"))
         );
 
         ta.addToken("assignment", ta.concat("variable",ta.fromString("="), "value"));
@@ -182,6 +182,7 @@ public class Test {
         ta.tokens.get("multiple_statement").anon = true;
 
         ta.addToken("else", ta.fromString("else"));
+
         ta.addToken("ifcond",
                 ta.concat(
                     ta.concat("if", "p_left","value", "p_right", "statement"),
@@ -194,10 +195,6 @@ public class Test {
                     "value", "semicolon", 
                     "value", "semicolon", 
                     "value", "p_right", "statement"));
-
-        ta.addToken("whileloop", ta.concat("while",
-                "p_left", "value", "p_right", "statement", "semicolon"));
-        
 
         ta.addToken("whileloop", ta.concat("while",
                 "p_left", "value", "p_right", "statement"));
@@ -213,7 +210,7 @@ public class Test {
 
         root.interprete();
 
-        str = "a = 5;  b = 3.0; c = a + b; d = a++; if(a > 0) { d = a + b; } else d = 0;";
+        str = "a = 5; b = -+++a;";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);

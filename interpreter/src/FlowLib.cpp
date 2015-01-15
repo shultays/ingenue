@@ -36,13 +36,21 @@ int interpreteFlow(Token *t){
 		{
 			return 1;
 		}
-		break;
+			break;
 		case WHILE:
 		{
 			WhileExtra *extra = (WhileExtra*)t->extra;
 			while (valueToBool(interpereteValue(extra->cond))){
 				interpreteFlow(extra->statements);
 			}
+		}
+		break;
+		case DOWHILE:
+		{
+			DoWhileExtra *extra = (DoWhileExtra*)t->extra;
+			do {
+				interpreteFlow(extra->statements);
+			} while(valueToBool(interpereteValue(extra->cond)));
 		}
 		break;
 		case IFCOND:
@@ -103,6 +111,16 @@ void configWhileToken(Token *t){
 	((WhileExtra*)t->extra)->statements = temp->nextSibling;
 	temp->nextSibling=NULL;
 }
+
+void configDoWhileToken(Token *t){
+	Token *temp = t->firstChild;
+	t->extra = malloc(sizeof(DoWhileExtra));
+	((DoWhileExtra*)t->extra)->cond = temp->nextSibling;
+	((DoWhileExtra*)t->extra)->statements = temp;
+	temp->nextSibling = NULL;
+}
+
+
 
 void configIfCondToken(Token *t){
 	Token *temp = t->firstChild;

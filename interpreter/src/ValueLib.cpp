@@ -49,6 +49,10 @@ typedef enum{
 	INC,
 	DEC,
 
+	NEGATE,
+	PLUS,
+	NOT,
+
 	MAXOP
 } opType;
 
@@ -76,6 +80,10 @@ int operatorPrecedences[] = {
 	10, //special
 	10, //special
 
+	11, //negate
+	11, //plus
+	11, //not
+
 	-1
 };
 
@@ -100,11 +108,15 @@ char *opTypeString[] = {
 	"pre--",
 	"++",
 	"--",
+
+	"-", //unary
+	"+", //unary
+	"!", //unary
 };
 
 int isOperatorSingle(int op)
 {
-	return op >= POST_INC && op <= PRE_DEC;
+	return op >= POST_INC && op < MAXOP;
 }
 int compare(int op, int a, int b)
 {
@@ -213,6 +225,49 @@ void convert(Value *v, int newType){
 	v->type = newType;
 }
 
+Value* interpreteAssignment(Token *t, int type, void *extra){
+	Value *v2;
+	std::string name(getVarName((int)t->firstChild->extra));
+
+	if (!(v2 = variables[currentStack][name])){
+		v2 = variables[currentStack][name] = (Value*)malloc(sizeof(Value));
+		v2->type = ERROR;
+	}
+	if (type == STRING){
+		v2->type = STRING;
+		v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+		variablesStackBuffSize[currentStack] += strlen((char*)extra) + 1;
+		strcpy((char*)v2->extra, (char*)extra);
+	}
+	else{
+		if (v2->type != type){
+			v2->type = type;
+			switch (v2->type){
+				case INTEGER:
+					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+					variablesStackBuffSize[currentStack] += sizeof(int);
+					break;
+				case FLOAT:
+					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
+					variablesStackBuffSize[currentStack] += sizeof(float);
+					break;
+			}
+		}
+		switch (v2->type){
+			case INTEGER:
+				*((int*)v2->extra) = *((int*)extra);
+				break;
+			case FLOAT:
+				*((float*)v2->extra) = *((float*)extra);
+				break;
+			default:
+				PERRORTOK("", t);
+				break;
+		}
+	}
+	return v2;
+}
+
 Value* interpereteStringOperator(Token *t, Value *v2, Value *v3){
 
 	switch ((int)t->extra){
@@ -265,53 +320,38 @@ Value* interpereteFloatOperator(Token *t, Value *v2, Value *v3){
 		case LESS_OR_EQUAL:
 			v2->type = INTEGER;
 			*((int*)v2->extra) = comparef((int)t->extra, *((float*)v2->extra), *((float*)v3->extra));
+			break;
+		case PRE_INC:
+		case PRE_DEC:
+		case POST_INC:
+		case POST_DEC:
+		{
+			v2 = v3;
+			float old_val = *((float*)v2->extra);
+			float new_val;
+			if ((int)t->extra == POST_INC || (int)t->extra == PRE_INC){
+				new_val = old_val + 1.0f;
+			}
+			else{
+				new_val = old_val - 1.0f;
+			}
+			interpreteAssignment(t, FLOAT, &new_val);
+
+			if ((int)t->extra == PRE_INC || (int)t->extra == PRE_DEC){
+				*((float*)v2->extra) = new_val;
+			}
+		}
 		break;
+		case NEGATE:
+			v2 = v3;
+			*((float*)v2->extra) = -*((float*)v2->extra);
+			break;
+		case PLUS:
+			v2 = v3;
+			break;
 		default:
 			PERROR("");
 		break;
-	}
-	return v2;
-}
-
-Value* interpreteAssignment(Token *t, int type, void *extra){
-	Value *v2;
-	std::string name(getVarName((int)t->firstChild->extra));
-
-	if (!(v2 = variables[currentStack][name])){
-		v2 = variables[currentStack][name] = (Value*)malloc(sizeof(Value));
-		v2->type = ERROR;
-	}
-	if (type == STRING){
-		v2->type = STRING;
-		v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-		variablesStackBuffSize[currentStack] += strlen((char*)extra) + 1;
-		strcpy((char*)v2->extra, (char*)extra);
-	}
-	else{
-		if (v2->type != type){
-			v2->type = type;
-			switch (v2->type){
-				case INTEGER:
-					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-					variablesStackBuffSize[currentStack] += sizeof(int);
-					break;
-				case FLOAT:
-					v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
-					variablesStackBuffSize[currentStack] += sizeof(float);
-					break;
-			}
-		}
-		switch (v2->type){
-			case INTEGER:
-				*((int*)v2->extra) = *((int*)extra);
-				break;
-			case FLOAT:
-				*((float*)v2->extra) = *((float*)extra);
-				break;
-			default:
-				PERRORTOK("", t);
-				break;
-		}
 	}
 	return v2;
 }
@@ -360,7 +400,18 @@ Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 				*((int*)v2->extra) = new_val;
 			}
 		}
-		break;
+			break;
+		case NEGATE:
+			v2 = v3;
+			*((int*)v2->extra) = -*((int*)v2->extra);
+			break;
+		case PLUS:
+			v2 = v3;
+			break;
+		case NOT:
+			v2 = v3;
+			*((int*)v2->extra) = !*((int*)v2->extra);
+			break;
 		default:
 			PERROR("");
 		break;
@@ -485,9 +536,14 @@ char *getVarName(int i){
 	return variableNames[i];	
 }
 
-int getOpType(char *c){
+
+int getOpType(char *c, bool is_single){
+	int start = 0;
+	if (isSingle){
+		start = NEGATE;
+	}
 	opType op = ERROROP;	
-	for(int i=0; op==ERROROP && i<MAXOP; i++) 
+	for(int i=start; op==ERROROP && i<MAXOP; i++) 
 		if(strcmp(c, opTypeString[i]) == 0) op = (opType) i; 
 
 	return op;

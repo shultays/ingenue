@@ -22,6 +22,7 @@ char *tokenTypeString[] = {
 	"ifcond",
 	"else",
 	"whileloop",
+	"dowhileloop",
 	"break",
 	"forloop",
 	"variable_withpost",
@@ -84,7 +85,13 @@ int buildProgram(Token **place){
 			break;
 			case SINGLE_OPERATOR:
 			{
-				(*place)->extra = (void*)(getOpType(buff));
+				(*place)->extra = (void*)(getOpType(buff, true));
+				(*place)->type = OPERATOR;
+			}
+			break;
+			case UNARY:
+			{
+
 			}
 			break;
 		}; 
@@ -96,8 +103,10 @@ int buildProgram(Token **place){
 		}
 	}
 	
-	if((*place)->type == WHILE){
-		configWhileToken(*place);	
+	if ((*place)->type == WHILE){
+		configWhileToken(*place);
+	}else if ((*place)->type == DOWHILE){
+		configDoWhileToken(*place);
 	}else if((*place)->type == VALUE){
 		configValueToken(*place);		
 	}else if((*place)->type == IFCOND){
@@ -115,7 +124,7 @@ int l;
 void print(Token *t, int tab, int line){
 	if(!t) return;
 	t->line = l;
-	printf("%d", l++);
+	printf("%2d ", l++);
 	for(int i=0; i<tab; i++) printf("  ");
 	printf("%s ", tokenTypeString[t->type]);
 	switch(t->type){

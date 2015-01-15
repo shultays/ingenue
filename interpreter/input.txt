@@ -14,69 +14,14 @@ program
             assignment
                 variable b
                 value
-                    float 3.0
-                /value
-            /assignment
-        /value
-    /statement
-    statement
-        value
-            assignment
-                variable c
-                value
-                    variable a
-                    operator +
-                    variable b
-                /value
-            /assignment
-        /value
-    /statement
-    statement
-        value
-            assignment
-                variable d
-                value
-                    variable_withpost
-                        variable a
+                    singleoperator -
+                    singleoperator +
+                    variable_withpre
                         singleoperator ++
-                    /variable_withpost
+                        variable a
+                    /variable_withpre
                 /value
             /assignment
         /value
-    /statement
-    statement
-        ifcond
-            value
-                variable a
-                operator >
-                integer 0
-            /value
-            statement
-                statement
-                    value
-                        assignment
-                            variable d
-                            value
-                                variable a
-                                operator +
-                                variable b
-                            /value
-                        /assignment
-                    /value
-                /statement
-            /statement
-            else
-            /else
-            statement
-                value
-                    assignment
-                        variable d
-                        value
-                            integer 0
-                        /value
-                    /assignment
-                /value
-            /statement
-        /ifcond
     /statement
 /program

@@ -6,6 +6,9 @@ public class TokenDef implements Validator{
 	public Validator func;
 	public boolean anon = true;
     public boolean printcontent = false;
+    public String alias;
+
+
 	/*
 	public int validate(String str) {
 		return func.validate(str);

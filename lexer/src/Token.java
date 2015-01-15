@@ -12,21 +12,26 @@ public class Token {
     
     void print(int tab, boolean showAnon){
         boolean p = def != null && (showAnon || !def.anon);
+        String name = null;
+        if(def != null){
+            name=def.name;
+            if(def.alias != null){
+                name = def.alias;
+            }
+        }
         if(p){
             for(int i=0; i<tab;i++)System.out.print("    ");
 
             if(def.printcontent){
-                System.out.print(def.name +" ");
-                System.out.println(strcontent);
+                System.out.println(name + " " + strcontent);
             }else{
-                System.out.println(def.name);
-                
+                System.out.println(name);
             }
         }
         for(Token t : children) t.print(tab+(p?1:0), showAnon);
         if(p && !def.printcontent){
             for(int i=0; i<tab;i++)System.out.print("    ");
-            if(def != null) System.out.println("/"+def.name);
+            if(def != null) System.out.println("/"+name);
             
         }
     }

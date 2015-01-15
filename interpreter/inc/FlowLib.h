@@ -21,12 +21,13 @@ typedef struct{
 typedef struct{
 	Token *cond;
 	Token *statements;
-}WhileExtra;
+}WhileExtra, DoWhileExtra;
 
 
 
 void configIfCondToken(Token *t);
 void configWhileToken(Token *t);
+void configDoWhileToken(Token *t);
 void configForToken(Token *t);
 
 

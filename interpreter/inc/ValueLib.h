@@ -12,7 +12,7 @@ typedef struct{
 int getVarIndex(char *c);
 char* getVarName(int i);
 
-int getOpType(char *c);
+int getOpType(char *c, bool isSingle = false);
 
 char* getOpTypeString(int t);
 

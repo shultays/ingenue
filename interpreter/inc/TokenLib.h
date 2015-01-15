@@ -15,11 +15,13 @@ typedef enum {
 	IFCOND,
 	ELSE,
 	WHILE,
+	DOWHILE,
 	BREAK,
 	FOR,
 	VAR_WITH_POST_OP,
 	VAR_WITH_PRE_OP,
 	SINGLE_OPERATOR,
+	UNARY,
 	MAXTOKEN
 } tokenType;
 
