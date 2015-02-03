@@ -1,4 +1,5 @@
 #include "Tools.h"
+#include <string.h>
 FILE *input;
 
 char buff[128];
@@ -11,7 +12,7 @@ void loadFile(char *c){
 }
 
 void getToken(char *c){
-	fscanf(input, "%s", c); 
+	fscanf(input, "%s", c);
 }
 
 void getToken(){

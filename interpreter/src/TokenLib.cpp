@@ -24,10 +24,14 @@ char *tokenTypeString[] = {
 	"whileloop",
 	"dowhileloop",
 	"break",
+	"return",
 	"forloop",
 	"variable_withpost",
 	"variable_withpre",
-	"singleoperator"
+	"singleoperator",
+	"unary",
+	"funcdef",
+	"funccall"
 };
 
 tokenType singleTokens[] = {INTEGER, FLOAT, STRING, OPERATOR, VARIABLE, SINGLE_OPERATOR};
@@ -115,6 +119,10 @@ int buildProgram(Token **place){
 		configForToken(*place);
 	}else if ((*place)->type == VAR_WITH_POST_OP || (*place)->type == VAR_WITH_PRE_OP){
 		buildPostPreOpToken(place);
+	}else if ((*place)->type == FUNC_DEF){
+		configFuncDefToken(*place);
+	}else if ((*place)->type == FUNC_CALL){
+		configFuncCallToken(*place);
 	}
 	return 1;
 }

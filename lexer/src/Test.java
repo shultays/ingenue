@@ -147,10 +147,13 @@ public class Test {
 
         ta.addToken("multiple_statement", ta.oneOrMore("statement"));
         
-        ta.addToken("return", ta.fromString("return"));
+        ta.addToken("return", ta.concat(ta.fromString("return"), ta.atMostOne("value")));
         ta.addToken("break", ta.fromString("break"));
         
         ta.addToken("statement", ta.oneOf(
+
+                ta.concat("break","semicolon"),
+                ta.concat("return","semicolon"),
                 ta.concat("value","semicolon"),
                 ta.concat("cp_left","multiple_statement","cp_right"),
                 "ifcond",
@@ -158,11 +161,9 @@ public class Test {
                 "whileloop",
                 "dowhileloop",
                 "semicolon",
-                "funcdef",
-                ta.concat("break","semicolon"),
-                ta.concat("return","semicolon"),
-                ta.concat("return","value","semicolon")
-         ));
+                "funcdef")
+
+        );
 
         
         ta.addToken("funcdef",
@@ -210,7 +211,7 @@ public class Test {
 
         root.interprete();
 
-        str = "a = 5; b = -+++a;";
+        str = "e = 3 + 2;func a(b, c) { d = b+c;print('<<d=' + d + '\\n', 5); return d;} f = a(5, 7);";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);

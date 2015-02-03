@@ -21,6 +21,7 @@ int valueToBool(Value* v)
 
 int interpreteFlow(Token *t){
 	Value *v, *v2, *v3;
+
 	if(t==NULL) return 0;
 	int result = 0;
 	switch(t->type){
@@ -29,14 +30,20 @@ int interpreteFlow(Token *t){
 		break;
 		case STATEMENT:
 		{
-			result = interpreteFlow(t->firstChild);
+			result=interpreteFlow(t->firstChild);
+		}
+		break;
+		case RETURN:
+		{
+			interpreteFlow(t->firstChild);
+			return 1;
 		}
 		break;
 		case BREAK:
 		{
 			return 1;
 		}
-			break;
+		break;
 		case WHILE:
 		{
 			WhileExtra *extra = (WhileExtra*)t->extra;
@@ -64,9 +71,9 @@ int interpreteFlow(Token *t){
 				break;
 			}
 			if(condResult){
-					result=interpreteFlow(extra->ifPart);
+				result=interpreteFlow(extra->ifPart);
 			}else{
-					result=interpreteFlow(extra->elsePart);
+				result=interpreteFlow(extra->elsePart);
 			}
 		}
 		break;
@@ -77,10 +84,13 @@ int interpreteFlow(Token *t){
 				if(interpreteFlow(extra->statements->firstChild)) break;
 			}
 		}
+		case FUNC_DEF:
+		case FUNC_CALL:
+			interpereteValue(t);
 		break;
+
 		case VALUE:
 		case ASSIGNMENT:
-			resetCalc();
 			interpereteValue(t->firstChild);
 		break;
 	}
@@ -93,30 +103,31 @@ int interpreteFlow(Token *t){
 
 void configForToken(Token *t){
 	Token *temp = t->firstChild;
-	t->extra = malloc(sizeof(ForExtra));
-	((ForExtra*)t->extra)->statements = temp->nextSibling->nextSibling->nextSibling;
-	((ForExtra*)t->extra)->afterPart = temp->nextSibling->nextSibling;
-	((ForExtra*)t->extra)->afterPart->nextSibling = NULL;
-	((ForExtra*)t->extra)->condPart = temp->nextSibling;
-	((ForExtra*)t->extra)->condPart->nextSibling = NULL;
-	((ForExtra*)t->extra)->initPart = temp;
-	((ForExtra*)t->extra)->initPart->nextSibling = NULL;
+	ForExtra *extra = (ForExtra*)(t->extra = malloc(sizeof(ForExtra)));
+
+	extra->statements = temp->nextSibling->nextSibling->nextSibling;
+	extra->afterPart = temp->nextSibling->nextSibling;
+	extra->afterPart->nextSibling = NULL;
+	extra->condPart = temp->nextSibling;
+	extra->condPart->nextSibling = NULL;
+	extra->initPart = temp;
+	extra->initPart->nextSibling = NULL;
 }
 
 
 void configWhileToken(Token *t){
 	Token *temp = t->firstChild;
-	t->extra = malloc(sizeof(WhileExtra));
-	((WhileExtra*)t->extra)->cond = temp;
-	((WhileExtra*)t->extra)->statements = temp->nextSibling;
+	WhileExtra *extra = (WhileExtra*)(t->extra = malloc(sizeof(WhileExtra)));
+	extra->cond = temp;
+	extra->statements = temp->nextSibling;
 	temp->nextSibling=NULL;
 }
 
 void configDoWhileToken(Token *t){
 	Token *temp = t->firstChild;
-	t->extra = malloc(sizeof(DoWhileExtra));
-	((DoWhileExtra*)t->extra)->cond = temp->nextSibling;
-	((DoWhileExtra*)t->extra)->statements = temp;
+	DoWhileExtra *extra = (DoWhileExtra*)(t->extra = malloc(sizeof(DoWhileExtra)));
+	extra->cond = temp->nextSibling;
+	extra->statements = temp;
 	temp->nextSibling = NULL;
 }
 
@@ -140,3 +151,36 @@ void configIfCondToken(Token *t){
 	}
 	temp->nextSibling = NULL;
 }
+
+
+void configFuncDefToken(Token *t){
+	Token *temp = t->firstChild->nextSibling;
+	FuncDefExtra *extra = (FuncDefExtra*)(t->extra = malloc(sizeof(FuncDefExtra)));
+	extra->name = t->firstChild;
+	extra->name->nextSibling = NULL;
+	Token **place = &(extra->parameters);
+	while (temp->type != STATEMENT)
+	{
+		*place = temp;
+		place = &((*place)->nextSibling);
+		temp = temp->nextSibling;
+	}
+	*place = NULL;
+	extra->func_body = temp;
+	t->firstChild = NULL;
+}
+
+
+void configFuncCallToken(Token *t){
+	Token *temp = t->firstChild->nextSibling;
+	FuncCallExtra *extra = (FuncCallExtra*)(t->extra = malloc(sizeof(FuncCallExtra)));
+	extra->name = t->firstChild;
+	extra->name->nextSibling = NULL;
+	extra->values = temp;
+	t->firstChild = NULL;
+}
+
+
+
+
+

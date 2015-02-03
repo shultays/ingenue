@@ -2,24 +2,74 @@ program
     statement
         value
             assignment
-                variable a
+                variable e
                 value
-                    integer 5
+                    integer 3
+                    operator +
+                    integer 2
                 /value
             /assignment
         /value
     /statement
     statement
+        funcdef
+            variable a
+            variable b
+            variable c
+            statement
+                statement
+                    value
+                        assignment
+                            variable d
+                            value
+                                variable b
+                                operator +
+                                variable c
+                            /value
+                        /assignment
+                    /value
+                /statement
+                statement
+                    value
+                        funccall
+                            variable print
+                            value
+                                string '<<d='
+                                operator +
+                                variable d
+                                operator +
+                                string '\n'
+                            /value
+                            value
+                                integer 5
+                            /value
+                        /funccall
+                    /value
+                /statement
+                statement
+                    return
+                        value
+                            variable d
+                        /value
+                    /return
+                /statement
+            /statement
+        /funcdef
+    /statement
+    statement
         value
             assignment
-                variable b
+                variable f
                 value
-                    singleoperator -
-                    singleoperator +
-                    variable_withpre
-                        singleoperator ++
+                    funccall
                         variable a
-                    /variable_withpre
+                        value
+                            integer 5
+                        /value
+                        value
+                            integer 7
+                        /value
+                    /funccall
                 /value
             /assignment
         /value

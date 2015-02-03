@@ -25,5 +25,4 @@ Value* lastValue();
 
 
 void getVar(char *a);
-void resetCalc();
 #endif

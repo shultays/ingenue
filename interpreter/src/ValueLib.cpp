@@ -1,16 +1,17 @@
 #include "ValueLib.h"
+#include "FlowLib.h"
+#include "Tools.h"
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <queue>
 #include <string>
 #include <stack>
-#include <map>
+#include <unordered_map>
 #include <assert.h> 
-#include "Tools.h"
 
 int currentStack=0;
-std::map<std::string, Value*> variables[512];
+std::unordered_map<std::string, Value*> variables[512];
 
 int variablesStackBuffSize[512] = { 0 };
 char variableValueBuff[512*1024];
@@ -26,6 +27,26 @@ int nValueBuff;
 
 std::stack<Value*> valueStack;
 
+
+Value* getVal(std::string &name)
+{
+	int st = currentStack;
+	while (st >= 0)
+	{
+		std::unordered_map<std::string, Value*>::iterator it;
+		it = variables[st].find(name);
+		if (it != variables[st].end())
+		{
+			return it->second;
+		}
+		st--;
+	}
+	Value *ret = (Value*)malloc(sizeof(Value));
+	ret->type = ERROR;
+	variables[currentStack].emplace(name, ret);
+
+	return ret;
+}
 
 typedef enum{
 	ERROROP,
@@ -52,7 +73,7 @@ typedef enum{
 	NEGATE,
 	PLUS,
 	NOT,
-
+	
 	MAXOP
 } opType;
 
@@ -102,11 +123,11 @@ char *opTypeString[] = {
 	"<",
 	"<=",
 
-	"post++", //these are special
+	"post++", //rest are unary
 	"pre++",
 	"post--",
 	"pre--",
-	"++",
+	"++", //these are only used for covnerting
 	"--",
 
 	"-", //unary
@@ -225,14 +246,10 @@ void convert(Value *v, int newType){
 	v->type = newType;
 }
 
-Value* interpreteAssignment(Token *t, int type, void *extra){
+Value* interpreteAssignment(std::string name, int type, void *extra){
 	Value *v2;
-	std::string name(getVarName((int)t->firstChild->extra));
-
-	if (!(v2 = variables[currentStack][name])){
-		v2 = variables[currentStack][name] = (Value*)malloc(sizeof(Value));
-		v2->type = ERROR;
-	}
+	v2 = getVal(name);
+	
 	if (type == STRING){
 		v2->type = STRING;
 		v2->extra = (void*)(variableValueBuff + variablesStackBuffSize[currentStack]);
@@ -261,7 +278,7 @@ Value* interpreteAssignment(Token *t, int type, void *extra){
 				*((float*)v2->extra) = *((float*)extra);
 				break;
 			default:
-				PERRORTOK("", t);
+				PERROR("");
 				break;
 		}
 	}
@@ -335,7 +352,7 @@ Value* interpereteFloatOperator(Token *t, Value *v2, Value *v3){
 			else{
 				new_val = old_val - 1.0f;
 			}
-			interpreteAssignment(t, FLOAT, &new_val);
+			interpreteAssignment(getVarName((int)t->firstChild->extra), FLOAT, &new_val);
 
 			if ((int)t->extra == PRE_INC || (int)t->extra == PRE_DEC){
 				*((float*)v2->extra) = new_val;
@@ -394,7 +411,7 @@ Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 			 }else{
 				new_val = old_val - 1;
 			}
-			interpreteAssignment(t, INTEGER, &new_val);
+			interpreteAssignment(getVarName((int)t->firstChild->extra), INTEGER, &new_val);
 
 			if ((int)t->extra == PRE_INC || (int)t->extra == PRE_DEC){
 				*((int*)v2->extra) = new_val;
@@ -420,10 +437,27 @@ Value* interpereteIntegerOperator(Token *t, Value *v2, Value *v3){
 }
 
 
+void printValues(Token *token)
+{
+	while (token)
+	{
+		interpereteValue(token->firstChild);
+		Value *val = valueBuff + nValueBuff;
+		if (val->type != STRING)
+		{
+			convert(val, STRING);
+		}
+		printf("%s", (char*)val->extra);
+		token = token->nextSibling;
+	}
+}
+
 Value* interpereteValue(Token *t){
 	Value *v = NULL, *v2 = NULL, *v3 = NULL;
 	if(t==NULL) return NULL;
 	int nValueBuffOld=nValueBuff;
+	int nValueExtraBuffOld = nValueExtraBuff;
+
 	switch (t->type){
 		default:
 			PERRORTOK("", t);
@@ -436,13 +470,13 @@ Value* interpereteValue(Token *t){
 		{
 			interpereteValue(t->firstChild->nextSibling);
 			v2 = valueBuff + nValueBuff;
-			v = interpreteAssignment(t, v2->type, v2->extra);
+			v = interpreteAssignment(getVarName((int)t->firstChild->extra), v2->type, v2->extra);
 			break;
 		}
 		case VARIABLE:
 		{
 			std::string name(getVarName((int)t->extra));
-			v2 = variables[currentStack][name];
+			v2 = getVal(name);
 			v = valueBuff+nValueBuff++;
 			switch(v2->type){
 				case INTEGER:
@@ -515,9 +549,51 @@ Value* interpereteValue(Token *t){
 				nValueBuff--;
 			
 		break;
+		case FUNC_DEF:
+		{
+			FuncDefExtra *extra = (FuncDefExtra*)t->extra;
+			std::string name(getVarName((int)extra->name->extra));
+			v2 = getVal(name);
+			v2->type = FUNC_DEF;
+			v2->extra = t;
+		}
+		break;
+		case FUNC_CALL:
+		{
+			FuncCallExtra *extra = (FuncCallExtra*)t->extra;
+			std::string name(getVarName((int)extra->name->extra));
+			if (name == "print")
+			{
+				printValues(extra->values);
+			}
+			else
+			{
+				Value *val = getVal(name);
+				currentStack++;
+				Token *funcDefToken = (Token*)val->extra;
+				FuncDefExtra *defExtra = (FuncDefExtra*)funcDefToken->extra;
+
+				Token *t_val = extra->values;
+				Token *t_def = defExtra->parameters;
+				while (t_val)
+				{
+					interpereteValue(t_val->firstChild);
+					v2 = valueBuff + nValueBuff;
+
+					interpreteAssignment(getVarName((int)t_def->extra), v2->type, v2->extra);
+					t_val = t_val->nextSibling;
+					t_def = t_def->nextSibling;
+				}
+
+				interpreteFlow(defExtra->func_body);
+				currentStack--;
+			}
+		}
+		break;
 	}
-	v2=interpereteValue(t->nextSibling);
-	nValueBuff=nValueBuffOld;
+	v2 = interpereteValue(t->nextSibling);
+	nValueBuff = nValueBuffOld;
+	nValueExtraBuff = nValueExtraBuffOld;
 	return v2?v2:v;
 }
 
@@ -539,7 +615,7 @@ char *getVarName(int i){
 
 int getOpType(char *c, bool is_single){
 	int start = 0;
-	if (isSingle){
+	if (is_single){
 		start = NEGATE;
 	}
 	opType op = ERROROP;	
@@ -629,11 +705,7 @@ void buildPostPreOpToken(Token **place){
 }
 
 
-void resetCalc(){
 
-	nValueExtraBuff=nValueBuff=0;
-
-}
 void getVar(char *a){
 	std::string name(a);
 	Value *v = variables[currentStack][name];
