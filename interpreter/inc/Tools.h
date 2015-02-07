@@ -10,8 +10,14 @@ extern char buff[128];
 extern FILE *input;
 
 void getToken(char *c);
+void getString(char *c);
 
 void getToken();
+void getString();
+
+bool isDigit(char c);
+bool isValidInt(char *str);
+bool isValidFloat(char *str);
 
 void loadFile(char *c);
 

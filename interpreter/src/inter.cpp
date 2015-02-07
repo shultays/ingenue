@@ -19,6 +19,7 @@ int main(){
 
 
 	interpreteFlow(root);
+	printf("\n\n----------------\n");
 	for (int i = 'a'; i <= 'z'; i++)
 	{
 		char buf[] = "a";

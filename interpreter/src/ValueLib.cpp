@@ -452,6 +452,32 @@ void printValues(Token *token)
 	}
 }
 
+
+void scanValue()
+{
+	Value *v = valueBuff + nValueBuff;
+	char buff[1024];
+	gets(buff);
+	if (isValidInt(buff))
+	{
+		v->type = INTEGER;
+		nValueExtraBuff += sizeof(int);
+		*((int*)v->extra) = (int)atoi(buff);
+	}
+	else if (isValidFloat(buff))
+	{
+		v->type = FLOAT;
+		nValueExtraBuff += sizeof(float);
+		*((float*)v->extra) = (float)atoi(buff);
+	}
+	else
+	{
+		v->type = STRING;
+		v->extra = valueExtraBuff + nValueExtraBuff;
+		nValueExtraBuff += sprintf((char*)v->extra, "%s", buff) + 1;
+	}
+}
+
 Value* interpereteValue(Token *t){
 	Value *v = NULL, *v2 = NULL, *v3 = NULL;
 	if(t==NULL) return NULL;
@@ -565,6 +591,10 @@ Value* interpereteValue(Token *t){
 			if (name == "print")
 			{
 				printValues(extra->values);
+			}
+			else if (name == "scan")
+			{
+				scanValue();
 			}
 			else
 			{

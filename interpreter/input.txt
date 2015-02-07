@@ -2,76 +2,53 @@ program
     statement
         value
             assignment
-                variable e
+                variable a
                 value
-                    integer 3
-                    operator +
-                    integer 2
+                    integer 5
                 /value
             /assignment
         /value
     /statement
     statement
-        funcdef
-            variable a
-            variable b
-            variable c
-            statement
-                statement
-                    value
-                        assignment
-                            variable d
-                            value
-                                variable b
-                                operator +
-                                variable c
-                            /value
-                        /assignment
-                    /value
-                /statement
-                statement
-                    value
-                        funccall
-                            variable print
-                            value
-                                string '<<d='
-                                operator +
-                                variable d
-                                operator +
-                                string '\n'
-                            /value
-                            value
-                                integer 5
-                            /value
-                        /funccall
-                    /value
-                /statement
-                statement
-                    return
-                        value
-                            variable d
-                        /value
-                    /return
-                /statement
-            /statement
-        /funcdef
+        value
+            assignment
+                variable b
+                value
+                    funccall
+                        variable scan
+                    /funccall
+                /value
+            /assignment
+        /value
     /statement
     statement
         value
             assignment
-                variable f
+                variable c
                 value
-                    funccall
-                        variable a
-                        value
-                            integer 5
-                        /value
-                        value
-                            integer 7
-                        /value
-                    /funccall
+                    variable a
+                    operator +
+                    variable b
                 /value
             /assignment
+        /value
+    /statement
+    statement
+        value
+            funccall
+                variable print
+                value
+                    variable a
+                    operator +
+                    string ' '
+                    operator +
+                    variable b
+                    operator +
+                    string ' '
+                    operator +
+                    variable c
+                /value
+            /funccall
         /value
     /statement
 /program

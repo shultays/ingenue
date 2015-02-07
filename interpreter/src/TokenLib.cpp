@@ -63,7 +63,14 @@ int buildProgram(Token **place){
 	*place = createToken(buff);
 	int endloop = 0;
 	if(isSingle((*place)->type)){
-		getToken();
+		if ((*place)->type != STRING)
+		{
+			getToken();
+		}
+		else
+		{
+			getString();
+		}
 		switch((*place)->type){
 			case INTEGER:
 				(*place)->extra = malloc(sizeof(int));
@@ -75,9 +82,9 @@ int buildProgram(Token **place){
 			break;
 			case STRING:
 				{
-					int l=strlen(buff)-2;
-					(*place)->extra = malloc(l+2);
-					strncpy((char*) (*place)->extra, buff+1, l);
+					int l=strlen(buff);
+					(*place)->extra = malloc(l+1);
+					strncpy((char*) (*place)->extra, buff, l);
 					((char*) (*place)->extra)[l] = 0;
 				}
 			break;
