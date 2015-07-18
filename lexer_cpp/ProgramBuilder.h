@@ -42,9 +42,12 @@ class ProgramBuilder {
 	char strnull[64];
 	MemoryAllocator allocator;
 
-	static OperatorType getOperatorType(Token& tokenData) {
-		int op = 0;
 
+	static OperatorType getOperatorType(Token& tokenData, bool isUnary) {
+		int op = 0;
+		if (isUnary) {
+			op = Op_negate;
+		}
 		while (op < Op_count) {
 			const char *str = getOperatorString(op);
 			int len = strlen(str);
@@ -55,7 +58,6 @@ class ProgramBuilder {
 				}
 
 			}
-
 
 			op++;
 		}
@@ -146,6 +148,9 @@ class ProgramBuilder {
 	}
 
 
+	void configureUnaryObject(Object *object) {
+		object->objectType = Tt_operator;
+	}
 
 	void configureValueObject(Object *object) {
 		std::queue <Object*> newOrder;
@@ -180,30 +185,60 @@ class ProgramBuilder {
 		*temp = nullptr;
 	}
 
+	void configureVariableWithPostOrPreObject(Object** object) {
+		Object *t = *object;
+		if (t->objectType == Tt_variable_withpre) {
+			if (t->firstChild->opType == Op_inc) {
+				t->opType = Op_pre_inc;
+			} else {
+				t->opType = Op_pre_dec;
+			}
+			t->firstChild = t->firstChild->nextSibling;
+		} else {
+			if (t->firstChild->nextSibling->opType == Op_inc) {
+				t->opType = Op_post_inc;
+			} else {
+				t->opType = Op_post_dec;
+			}
+		}
+		allocator.deleteMemory<Object>(t->firstChild->nextSibling);
+		t->firstChild->nextSibling = nullptr;
+		t->objectType = Tt_operator;
+		*object = t->firstChild;
+		(*object)->nextSibling = t;
+		t->firstChild = nullptr;
+	}
 
-	void configureObject(Object* object) {
-		switch (object->objectType) {
+
+	void configureObject(Object** object) {
+		switch ((*object)->objectType) {
 			case Tt_whileloop:
-				configureWhileObject(object);
+				configureWhileObject(*object);
 				break;
 			case Tt_dowhileloop:
-				configureDoWhileObject(object);
+				configureDoWhileObject(*object);
 				break;
 			case Tt_ifcond:
-				configureIfObject(object);
+				configureIfObject(*object);
 				break;
 			case Tt_forloop:
-				configureForObject(object);
+				configureForObject(*object);
 				break;
 			case Tt_funcdef:
-				configureFuncDefObject(object);
+				configureFuncDefObject(*object);
 				break;
 			case Tt_funccall:
-				configureFuncCallObject(object);
+				configureFuncCallObject(*object);
 				break;
 			case Tt_value:
-				configureValueObject(object);
+				configureValueObject(*object);
 				break;
+			case Tt_variable_withpost:
+			case Tt_variable_withpre:
+				configureVariableWithPostOrPreObject(object); // this can change value of object
+				break;
+			case Tt_unary:
+				configureUnaryObject(*object);
 			default:
 				break;
 		}
@@ -232,7 +267,7 @@ class ProgramBuilder {
 			case Tt_operator:
 			case Tt_singleoperator:
 			case Tt_unary:
-				object->opType = getOperatorType(tokenData);
+				object->opType = getOperatorType(tokenData, object->objectType == Tt_unary);
 				break;
 		}
 
@@ -246,20 +281,20 @@ public:
 		Object *firstObject = nullptr;
 		for (unsigned i = 0; i < tokenDataList.size(); i++) {
 			Object* object = buildObject(tokenDataList[i]);
-			if (prevObject) {
-				prevObject->nextSibling = object;
-			}
-
 			if (tokenDataList[i].children.size() > 0) {
 				object->firstChild = buildProgram(tokenDataList[i].children);
 			}
 
-			configureObject(object);
+			configureObject(&object);
 
-			prevObject = object;
+			if (prevObject) {
+				prevObject->nextSibling = object;
+			}
 			if (i == 0) {
 				firstObject = object;
 			}
+			while (object->nextSibling) object = object->nextSibling;
+			prevObject = object;
 		}
 
 		return firstObject;
@@ -284,8 +319,7 @@ public:
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
-			case Tt_unary:
-				printf("%s", getOperatorString(object->opType));
+				printf("%s %s", getOperatorString(object->opType), object->opType >= Op_negate ? " (unary)" : "");
 				break;
 			case Tt_ifcond:
 				printf("if\n");
@@ -348,6 +382,46 @@ public:
 		printProgram(object->nextSibling, level);
 
 	}
+
+	void deleteProgram(Object* object) {
+		if (object == nullptr) return;
+
+		switch (object->objectType) {
+			case Tt_whileloop:
+				allocator.deleteMemory<WhileExtra>(object->whileExtra);
+				break;
+			case Tt_dowhileloop:
+				allocator.deleteMemory<DoWhileExtra>(object->doWhileExtra);
+				break;
+			case Tt_ifcond:
+				allocator.deleteMemory<IfExtra>(object->ifExtra);
+				break;
+			case Tt_forloop:
+				allocator.deleteMemory<ForExtra>(object->forExtra);
+				break;
+			case Tt_funcdef:
+				allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
+				break;
+			case Tt_funccall:
+				allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
+				break;
+			case Tt_variable:
+			case Tt_string:
+				allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
+				break;
+
+			default:
+				break;
+		}
+
+		deleteProgram(object->nextSibling);
+		deleteProgram(object->firstChild);
+
+
+		allocator.deleteMemory<Object>(object);
+	}
+
+
 };
 
 

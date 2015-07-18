@@ -25,7 +25,7 @@ const char* operatorStrings[] = {
 
 	"-",
 	"+",
-	"1",
+	"!",
 };
 
 
@@ -55,7 +55,6 @@ void buildTools() {
 	tokenNames[Tt_variable_withpost] = "variable_withpost";
 	tokenNames[Tt_variable_withpre] = "variable_withpre";
 	tokenNames[Tt_unary] = "unary";
-	tokenNames[Tt_value_with_unary] = "value_with_unary";
 	tokenNames[Tt_value] = "value";
 	tokenNames[Tt_value_one] = "value_one";
 	tokenNames[Tt_assignment] = "assignment";
@@ -72,6 +71,7 @@ void buildTools() {
 	tokenNames[Tt_else] = "else";
 	tokenNames[Tt_program] = "program";
 	tokenNames[Tt_assign] = "assign";
+	//tokenNames[Tt_value_with_unary] = "value_with_unary";
 
 	tokenNames[Tt_invalid] = "invalid";
 }

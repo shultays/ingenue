@@ -132,16 +132,17 @@ void Tokenizer::buildTokenList() {
 		);
 
 	addToken(Tt_unary, oneOf(fromString("-"), fromString("+"), fromString("!")));
-	addToken(Tt_value_with_unary, join(Tt_unary, Tt_value));
 
 	addToken(Tt_value_one,
 		oneOf(Tt_assignment, Tt_funccall, Tt_variable, Tt_integer, Tt_float, Tt_string, Tt_variable_withpre,
-		Tt_variable_withpost, Tt_value_with_unary, join(Tt_p_left, Tt_value, Tt_p_right)
+		Tt_variable_withpost, join(Tt_unary, Tt_value_one), join(Tt_p_left, Tt_value, Tt_p_right)
 		)
 		).makeAnonymous();
 
-	addToken(Tt_value,
-		join(Tt_value_one, zeroOrMore(join(Tt_operator, Tt_value_one)))
+	addToken(Tt_value, oneOf(
+		join(Tt_value_one, zeroOrMore(join(Tt_operator, Tt_value_one))),
+		join(Tt_value_one, zeroOrMore(join(Tt_operator, Tt_value)))
+		)
 		);
 
 	addToken(Tt_assign, fromString("=")).makeAnonymous();

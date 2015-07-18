@@ -28,7 +28,6 @@ enum TokenType {
 	Tt_variable_withpre,
 	Tt_value,
 	Tt_value_one,
-	Tt_value_with_unary,
 	Tt_unary,
 	Tt_assign,
 	Tt_assignment,
@@ -178,20 +177,37 @@ public:
 
 class MemoryAllocator {
 public:
+
+	int allocSize;
+
+	MemoryAllocator() {
+		allocSize = 0;
+	}
+
 	template<class T>
 	T* getMemory() {
-		return getMemory<T>(1);
+		allocSize += sizeof(T);
+		return new T;
 	}
 
 	template<class T>
 	void deleteMemory(T* object) {
+		allocSize -= sizeof(T);
 		delete object;
 	}
 
 	template<class T>
 	T* getMemory(int count) {
+		allocSize += sizeof(T)* count;
 		return new T[count];
 	}
+
+	template<class T>
+	void deleteMemory(T* object, int count) {
+		allocSize -= sizeof(T)* count;
+		delete[] object;
+	}
+
 };
 
 void buildTools();

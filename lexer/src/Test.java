@@ -211,7 +211,7 @@ public class Test {
 
         root.interprete();
 
-        str = "e = 3 + 2;func a(b, c) { d = b+c;print('<<d=' + d + '\\n', 5); return d;} f = a(5, 7);";
+        str = "--b+a;";
         if(args.length > 0) str = args[0];
         ta.validate("program", root, str);
         root.print(0, false);
