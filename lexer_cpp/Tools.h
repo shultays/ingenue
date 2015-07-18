@@ -68,6 +68,15 @@ enum OperatorType {
 	Op_inc,
 	Op_dec,
 
+	Op_pre_inc,
+	Op_post_inc,
+	Op_pre_dec,
+	Op_post_dec,
+
+	Op_negate,
+	Op_plus,
+	Op_not,
+
 
 	Op_count
 };
