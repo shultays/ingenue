@@ -74,12 +74,13 @@ enum OperatorType {
 
 	Op_negate,
 	Op_plus,
-	Op_not,
 
 
 	Op_count
 };
 
+
+bool isOperatorUnion(OperatorType op);
 
 class Token;
 typedef std::vector<Token> TokenList;
@@ -172,7 +173,14 @@ public:
 		DoWhileExtra *doWhileExtra;
 		FuncDefExtra *funcDefExtra;
 		FuncCallExtra *funcCallExtra;
+
+		unsigned variableIndex;
 	};
+};
+
+class Program {
+public:
+	Object *root;
 };
 
 class MemoryAllocator {

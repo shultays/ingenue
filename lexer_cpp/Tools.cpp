@@ -83,3 +83,7 @@ const char* getTokenName(TokenType type) {
 const char* getOperatorString(int type) {
 	return operatorStrings[type];
 }
+
+bool isOperatorUnion(OperatorType op) {
+	return op >= Op_inc;
+}

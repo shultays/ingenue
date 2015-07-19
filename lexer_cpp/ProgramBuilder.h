@@ -39,9 +39,16 @@ int operatorPrecedences[] = {
 };
 
 class ProgramBuilder {
-	char strnull[64];
 	MemoryAllocator allocator;
+	std::vector<std::string> varNames;
 
+	unsigned getVariableIndex(std::string varName) {
+		for (unsigned i = 0; i < varNames.size(); i++) {
+			if (varNames[i] == varName) return i;
+		}
+		varNames.push_back(varName);
+		return varNames.size() - 1;
+	}
 
 	static OperatorType getOperatorType(Token& tokenData, bool isUnary) {
 		int op = 0;
@@ -245,6 +252,8 @@ class ProgramBuilder {
 	}
 
 	Object* buildObject(Token& tokenData) {
+		char strnull[128];
+
 		Object* object = allocator.getMemory<Object>();
 		object->objectType = tokenData.tokenType;
 		switch (object->objectType) {
@@ -259,10 +268,13 @@ class ProgramBuilder {
 				object->floatVal = (float)atof(strnull);
 				break;
 			case Tt_string:
-			case Tt_variable:
-				object->pChar = allocator.getMemory<char>(tokenData.tokenLength + 1);
-				memcpy(object->pChar, tokenData.tokenBegin, tokenData.tokenLength);
+
 				object->pChar[tokenData.tokenLength] = '\0';
+				break;
+			case Tt_variable:
+				memcpy(strnull, tokenData.tokenBegin, tokenData.tokenLength);
+				strnull[tokenData.tokenLength] = '\0';
+				object->variableIndex = getVariableIndex(strnull);
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
@@ -315,7 +327,7 @@ public:
 				printf("%s", object->pChar);
 				break;
 			case Tt_variable:
-				printf("%s", object->pChar);
+				printf("%s", varNames[object->variableIndex].c_str());
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
@@ -405,7 +417,6 @@ public:
 			case Tt_funccall:
 				allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
 				break;
-			case Tt_variable:
 			case Tt_string:
 				allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
 				break;

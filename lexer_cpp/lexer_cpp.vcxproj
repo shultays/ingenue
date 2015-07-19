@@ -69,6 +69,7 @@
     <ClCompile Include="Tools.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Interpreter.h" />
     <ClInclude Include="ProgramBuilder.h" />
     <ClInclude Include="Tokenizer.h" />
     <ClInclude Include="Tools.h" />
