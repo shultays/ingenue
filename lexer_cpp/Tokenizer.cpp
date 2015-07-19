@@ -149,7 +149,7 @@ void Tokenizer::buildTokenList() {
 
 	addToken(Tt_assignment, join(Tt_variable, Tt_assign, Tt_value));
 
-	addToken(Tt_multiple_statement, oneOrMore(Tt_statement)).makeAnonymous();
+	addToken(Tt_multiple_statement, oneOrMore(Tt_statement));
 
 	addToken(Tt_return, join(fromString("return"), atMostOne(Tt_value)));
 	addToken(Tt_break, fromString("break"));
@@ -213,11 +213,11 @@ void Tokenizer::buildTokenList() {
 		)
 		);
 
+
 	addToken(Tt_dowhileloop, join(Tt_do, Tt_statement,
 		Tt_while, Tt_p_left, Tt_value, Tt_p_right, Tt_semicolon));
 
-	addToken(Tt_program, oneOrMore(Tt_multiple_statement)).makeAnonymous();
-
+	addToken(Tt_program, oneOrMore(Tt_statement));
 }
 
 

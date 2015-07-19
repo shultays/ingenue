@@ -19,6 +19,8 @@ class Interpreter {
 	char *stack;
 	char *heapEnd;
 	Value *valueStackPointer;
+	Value *variableStackPointer;
+
 
 	void convert(Value *value, TokenType newType) {
 		switch (value->valueType) {
@@ -53,8 +55,6 @@ class Interpreter {
 	}
 
 	Value* interpereteFloatOperator(Object *op, Value* v1, Value* v2) {
-		bool temp;
-
 		switch (op->opType) {
 			case Op_addition:
 				v1->floatVal += v2->floatVal;
@@ -69,40 +69,28 @@ class Interpreter {
 				v1->floatVal /= v2->floatVal;
 				break;
 			case Op_equality:
-				temp = v1->floatVal == v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal == v2->floatVal;
 				break;
 			case Op_inequality:
-				temp = v1->floatVal != v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal != v2->floatVal;
 				break;
 			case Op_greater_than:
-				temp = v1->floatVal > v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal > v2->floatVal;
 				break;
 			case Op_greater_or_equal:
-				temp = v1->floatVal >= v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal >= v2->floatVal;
 				break;
 			case Op_less_than:
-				temp = v1->floatVal < v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal < v2->floatVal;
 				break;
 			case Op_less_or_equal:
-				temp = v1->floatVal <= v2->floatVal;
-				convert(v1, Tt_integer);
-				v1->intVal = temp;
-				break;
-			case Op_pre_dec:
-			case Op_pre_inc:
-			case Op_post_dec:
-			case Op_post_inc:
-				// TODO
+				v1->valueType = Tt_integer;
+				v1->intVal = v1->floatVal <= v2->floatVal;
 				break;
 			case Op_negate:
 				v1 = v2;
@@ -112,7 +100,7 @@ class Interpreter {
 				v1 = v2;
 				break;
 		}
-		return v2;
+		return v1;
 	}
 
 	Value* interpereteIntegerOperator(Object *op, Value* v1, Value* v2) {
@@ -150,12 +138,6 @@ class Interpreter {
 			case Op_less_or_equal:
 				v1->intVal = v1->floatVal <= v2->floatVal;
 				break;
-			case Op_pre_dec:
-			case Op_pre_inc:
-			case Op_post_dec:
-			case Op_post_inc:
-				// TODO
-				break;
 			case Op_negate:
 				v1 = v2;
 				v2->floatVal = -v2->floatVal;
@@ -164,7 +146,7 @@ class Interpreter {
 				v1 = v2;
 				break;
 		}
-		return v2;
+		return v1;
 	}
 
 
@@ -183,11 +165,66 @@ class Interpreter {
 				v = interpretValue(object->firstChild);
 				break;
 			case Tt_assignment:
-				interpretValue(object->firstChild->nextSibling);
-				// TODO
+				v = interpretValue(object->firstChild->nextSibling);
+				variableStackPointer[object->firstChild->intVal] = *v;
 				break;
 			case Tt_variable:
-				// TODO
+				v = valueStackPointer++;
+				*v = variableStackPointer[object->intVal];
+				break;
+
+			case Tt_variable_withpost:
+				v = valueStackPointer++;
+				*v = variableStackPointer[object->firstChild->intVal];
+				switch (object->firstChild->nextSibling->opType) {
+					case Op_inc:
+						switch (variableStackPointer[object->firstChild->intVal].valueType) {
+							case Tt_integer:
+								variableStackPointer[object->firstChild->intVal].intVal++;
+								break;
+							case Tt_float:
+								variableStackPointer[object->firstChild->intVal].floatVal += 1.0f;
+								break;
+						}
+						break;
+					case Op_dec:
+						switch (variableStackPointer[object->firstChild->intVal].valueType) {
+							case Tt_integer:
+								variableStackPointer[object->firstChild->intVal].intVal--;
+								break;
+							case Tt_float:
+								variableStackPointer[object->firstChild->intVal].floatVal -= 1.0f;
+								break;
+						}
+						break;
+				}
+				break;
+
+			case Tt_variable_withpre:
+				v = valueStackPointer++;
+				switch (object->firstChild->opType) {
+					case Op_inc:
+						switch (variableStackPointer[object->firstChild->nextSibling->intVal].valueType) {
+							case Tt_integer:
+								variableStackPointer[object->firstChild->nextSibling->intVal].intVal++;
+								break;
+							case Tt_float:
+								variableStackPointer[object->firstChild->nextSibling->intVal].floatVal += 1.0f;
+								break;
+						}
+						break;
+					case Op_dec:
+						switch (variableStackPointer[object->firstChild->nextSibling->intVal].valueType) {
+							case Tt_integer:
+								variableStackPointer[object->firstChild->nextSibling->intVal].intVal--;
+								break;
+							case Tt_float:
+								variableStackPointer[object->firstChild->nextSibling->intVal].floatVal -= 1.0f;
+								break;
+						}
+						break;
+				}
+				*v = variableStackPointer[object->firstChild->nextSibling->intVal];
 				break;
 			case Tt_string:
 				// TODO
@@ -228,6 +265,7 @@ class Interpreter {
 					valueStackPointer--;
 
 				break;
+
 			case Tt_funcdef:
 				// TODO
 				break;
@@ -261,6 +299,14 @@ class Interpreter {
 			default:
 				result = interpretFlow(object->firstChild);
 				break;
+			case Tt_multiple_statement:
+			case Tt_program:
+				memset(valueStackPointer, 0, sizeof(Object)*object->intVal); // new variables
+
+				valueStackPointer += object->intVal;
+				result = interpretFlow(object->firstChild);
+				valueStackPointer -= object->intVal;
+				break;
 			case Tt_statement:
 				result = interpretFlow(object->firstChild);
 				break;
@@ -272,26 +318,42 @@ class Interpreter {
 				return true;
 				break;
 			case Tt_whileloop:
+				memset(valueStackPointer, 0, sizeof(Object)*object->whileExtra->scopeSize); // new variables
+
+				valueStackPointer += object->whileExtra->scopeSize;
 				while (valueToBool(interpretValue(object->whileExtra->cond))) {
 					interpretFlow(object->whileExtra->statements);
 				}
+				valueStackPointer -= object->whileExtra->scopeSize;
 				break;
 			case Tt_dowhileloop:
+				memset(valueStackPointer, 0, sizeof(Object)*object->doWhileExtra->scopeSize); // new variables
+
+				valueStackPointer += object->doWhileExtra->scopeSize;
 				do {
 					interpretFlow(object->doWhileExtra->statements);
 				} while (valueToBool(interpretValue(object->doWhileExtra->cond)));
+				valueStackPointer -= object->doWhileExtra->scopeSize;
 				break;
 			case Tt_ifcond:
+				memset(valueStackPointer, 0, sizeof(Object)*object->ifExtra->scopeSize); // new variables
+
+				valueStackPointer += object->ifExtra->scopeSize;
 				if (valueToBool(interpretValue(object->ifExtra->cond))) {
 					result = interpretFlow(object->ifExtra->ifPart);
 				} else {
 					result = interpretFlow(object->ifExtra->elsePart);
 				}
+				valueStackPointer -= object->ifExtra->scopeSize;
 				break;
 			case Tt_forloop:
+				memset(valueStackPointer, 0, sizeof(Object)*object->forExtra->scopeSize); // new variables
+
+				valueStackPointer += object->forExtra->scopeSize;
 				for (interpretValue(object->forExtra->initPart); valueToBool(interpretValue(object->forExtra->condPart)); interpretValue(object->forExtra->afterPart)) {
 					if (interpretFlow(object->forExtra->statements)) break;
 				}
+				valueStackPointer -= object->forExtra->scopeSize;
 				break;
 			case Tt_funcdef:
 			case Tt_funccall:
@@ -307,16 +369,43 @@ class Interpreter {
 
 public:
 	Interpreter() {
-		int stackSize = 1024 * 1024 * 4;
-		stack = new char[stackSize];
+		stack = new char[STACK_SIZE];
 		valueStackPointer = (Value*)stack;
-		heapEnd = stack + stackSize;
+		variableStackPointer = valueStackPointer;
+		heapEnd = stack + STACK_SIZE;
 	}
 
-	void interprete(Object* object) {
-		interpretFlow(object);
+	~Interpreter() {
+		delete stack;
 	}
 
+	void interprete(const Program& program) {
+		valueStackPointer = (Value*)stack;
+		variableStackPointer = valueStackPointer;
+		heapEnd = stack + STACK_SIZE;
+		interpretFlow(program.root);
+	}
+
+	void printVal(const Program& program, const std::string& varName) {
+		for (unsigned i = 0; i < program.globals.size(); i++) {
+			if (program.globals[i] == varName) {
+				Value* v = &variableStackPointer[i];
+				switch (v->valueType) {
+					case Tt_integer:
+						printf("%s = %d\n", varName.c_str(), v->intVal);
+						break;
+					case Tt_float:
+						printf("%s = %f\n", varName.c_str(), v->floatVal);
+						break;
+					case Tt_string:
+						// TODO
+						break;
+				}
+				return;
+			}
+		}
+		printf("There is no global named '%s'\n", varName.c_str());
+	}
 };
 
 #endif

@@ -3,6 +3,7 @@
 
 #include <queue>
 #include <stack>
+#include <map>
 #include "Tools.h"
 
 
@@ -26,11 +27,6 @@ int operatorPrecedences[] = {
 	10, //++
 	10, //--
 
-	10,
-	10,
-	10,
-	10,
-
 	11,
 	11,
 	11,
@@ -40,13 +36,31 @@ int operatorPrecedences[] = {
 
 class ProgramBuilder {
 	MemoryAllocator allocator;
-	std::vector<std::string> varNames;
 
-	unsigned getVariableIndex(std::string varName) {
-		for (unsigned i = 0; i < varNames.size(); i++) {
-			if (varNames[i] == varName) return i;
+	unsigned varNameCheckStart;
+	std::vector<std::string> varNames;
+	std::vector<std::string> globalNames;
+
+	std::map < Object*, std::string> allNames; // debug
+
+	std::stack<int> scopeSizeStack;
+
+
+	int getVariableIndex(std::string varName, Object* object) {
+		allNames[object] = varName;
+
+		for (unsigned i = varNameCheckStart; i < varNames.size(); i++) {
+			if (varNames[i] == varName) return ((int)i) - varNameCheckStart;
 		}
+		for (unsigned i = 0; i < globalNames.size(); i++) {
+			if (globalNames[i] == varName) return -((int)i) - 1;
+		}
+
 		varNames.push_back(varName);
+		if (scopeSizeStack.size() == 1) {
+			globalNames.push_back(varName);
+		}
+
 		return varNames.size() - 1;
 	}
 
@@ -59,23 +73,24 @@ class ProgramBuilder {
 			const char *str = getOperatorString(op);
 			int len = strlen(str);
 			if (len == tokenData.tokenLength) {
-
 				if (memcmp(tokenData.tokenBegin, getOperatorString(op), len) == 0) {
 					return (OperatorType)op;
 				}
-
 			}
-
 			op++;
 		}
 		return Op_err;
 	}
 
 	void configureWhileObject(Object* object) {
+
 		Object *temp = object->firstChild;
 		object->whileExtra = allocator.getMemory<WhileExtra>();
 		object->whileExtra->cond = temp;
 		object->whileExtra->statements = temp->nextSibling;
+		object->whileExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		varNames.resize(scopeSizeStack.top());
+		scopeSizeStack.pop();
 		temp->nextSibling = nullptr;
 		object->firstChild = nullptr;
 	}
@@ -85,6 +100,9 @@ class ProgramBuilder {
 		object->doWhileExtra = allocator.getMemory<DoWhileExtra>();
 		object->doWhileExtra->cond = temp->nextSibling;
 		object->doWhileExtra->statements = temp;
+		object->doWhileExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		varNames.resize(scopeSizeStack.top());
+		scopeSizeStack.pop();
 		temp->nextSibling = nullptr;
 		object->firstChild = nullptr;
 	}
@@ -100,7 +118,9 @@ class ProgramBuilder {
 		object->forExtra->condPart->nextSibling = nullptr;
 		object->forExtra->initPart = temp;
 		object->forExtra->initPart->nextSibling = nullptr;
-
+		object->forExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		varNames.resize(scopeSizeStack.top());
+		scopeSizeStack.pop();
 		object->firstChild = nullptr;
 	}
 
@@ -125,9 +145,15 @@ class ProgramBuilder {
 		}
 		temp->nextSibling = nullptr;
 		object->firstChild = nullptr;
+
+		object->ifExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		varNames.resize(scopeSizeStack.top());
+		scopeSizeStack.pop();
 	}
 
 	void configureFuncDefObject(Object *object) {
+		varNameCheckStart = object->intVal;
+
 		Object *temp = object->firstChild->nextSibling;
 		object->funcDefExtra = allocator.getMemory<FuncDefExtra>();
 		object->funcDefExtra->name = object->firstChild;
@@ -153,7 +179,6 @@ class ProgramBuilder {
 		object->funcCallExtra->values = temp;
 		object->firstChild = nullptr;
 	}
-
 
 	void configureUnaryObject(Object *object) {
 		object->objectType = Tt_operator;
@@ -192,60 +217,38 @@ class ProgramBuilder {
 		*temp = nullptr;
 	}
 
-	void configureVariableWithPostOrPreObject(Object** object) {
-		Object *t = *object;
-		if (t->objectType == Tt_variable_withpre) {
-			if (t->firstChild->opType == Op_inc) {
-				t->opType = Op_pre_inc;
-			} else {
-				t->opType = Op_pre_dec;
-			}
-			t->firstChild = t->firstChild->nextSibling;
-		} else {
-			if (t->firstChild->nextSibling->opType == Op_inc) {
-				t->opType = Op_post_inc;
-			} else {
-				t->opType = Op_post_dec;
-			}
-		}
-		allocator.deleteMemory<Object>(t->firstChild->nextSibling);
-		t->firstChild->nextSibling = nullptr;
-		t->objectType = Tt_operator;
-		*object = t->firstChild;
-		(*object)->nextSibling = t;
-		t->firstChild = nullptr;
-	}
-
-
-	void configureObject(Object** object) {
-		switch ((*object)->objectType) {
+	void configureObject(Object* object) {
+		switch (object->objectType) {
 			case Tt_whileloop:
-				configureWhileObject(*object);
+				configureWhileObject(object);
 				break;
 			case Tt_dowhileloop:
-				configureDoWhileObject(*object);
+				configureDoWhileObject(object);
 				break;
 			case Tt_ifcond:
-				configureIfObject(*object);
+				configureIfObject(object);
 				break;
 			case Tt_forloop:
-				configureForObject(*object);
+				configureForObject(object);
 				break;
 			case Tt_funcdef:
-				configureFuncDefObject(*object);
+				configureFuncDefObject(object);
 				break;
 			case Tt_funccall:
-				configureFuncCallObject(*object);
+				configureFuncCallObject(object);
 				break;
 			case Tt_value:
-				configureValueObject(*object);
-				break;
-			case Tt_variable_withpost:
-			case Tt_variable_withpre:
-				configureVariableWithPostOrPreObject(object); // this can change value of object
+				configureValueObject(object);
 				break;
 			case Tt_unary:
-				configureUnaryObject(*object);
+				configureUnaryObject(object);
+				break;
+			case Tt_multiple_statement:
+			case Tt_program:
+				object->intVal = varNames.size() - scopeSizeStack.top();
+				varNames.resize(scopeSizeStack.top());
+				scopeSizeStack.pop();
+				break;
 			default:
 				break;
 		}
@@ -268,36 +271,47 @@ class ProgramBuilder {
 				object->floatVal = (float)atof(strnull);
 				break;
 			case Tt_string:
-
 				object->pChar[tokenData.tokenLength] = '\0';
 				break;
 			case Tt_variable:
 				memcpy(strnull, tokenData.tokenBegin, tokenData.tokenLength);
 				strnull[tokenData.tokenLength] = '\0';
-				object->variableIndex = getVariableIndex(strnull);
+				object->intVal = getVariableIndex(strnull, object);
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
 			case Tt_unary:
 				object->opType = getOperatorType(tokenData, object->objectType == Tt_unary);
 				break;
+			case Tt_multiple_statement:
+			case Tt_program:
+			case Tt_forloop:
+			case Tt_whileloop:
+			case Tt_dowhileloop:
+			case Tt_ifcond:
+				scopeSizeStack.push(varNames.size());
+				break;
+			case Tt_funcdef:
+				object->intVal = varNameCheckStart;
+				varNameCheckStart = varNames.size();
+				break;
 		}
 
 		return object;
 	}
 
-public:
 
-	Object * buildProgram(TokenList& tokenDataList) {
+
+	Object * buildSubProgram(TokenList& tokenDataList) {
 		Object *prevObject = nullptr;
 		Object *firstObject = nullptr;
 		for (unsigned i = 0; i < tokenDataList.size(); i++) {
 			Object* object = buildObject(tokenDataList[i]);
 			if (tokenDataList[i].children.size() > 0) {
-				object->firstChild = buildProgram(tokenDataList[i].children);
+				object->firstChild = buildSubProgram(tokenDataList[i].children);
 			}
 
-			configureObject(&object);
+			configureObject(object);
 
 			if (prevObject) {
 				prevObject->nextSibling = object;
@@ -312,11 +326,17 @@ public:
 		return firstObject;
 	}
 
-	void printProgram(Object* object, int level = 0) {
+	void printObject(Object* object, int level = 0) {
 		if (object == nullptr) return;
 		for (int i = 0; i < level * 2; i++) printf(" ");
-
+		bool moveVariableStack = false;
 		switch (object->objectType) {
+			case Tt_program:
+				printf("program %d", object->intVal);
+				break;
+			case Tt_multiple_statement:
+				printf("multiple_statement %d", object->intVal);
+				break;
 			case Tt_integer:
 				printf("%d", object->intVal);
 				break;
@@ -327,62 +347,62 @@ public:
 				printf("%s", object->pChar);
 				break;
 			case Tt_variable:
-				printf("%s", varNames[object->variableIndex].c_str());
+				printf("%s (%d)", allNames[object].c_str(), object->intVal);
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
 				printf("%s %s", getOperatorString(object->opType), object->opType >= Op_negate ? " (unary)" : "");
 				break;
 			case Tt_ifcond:
-				printf("if\n");
+				printf("if %d\n", object->ifExtra->scopeSize);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
-				printProgram(object->ifExtra->cond, level + 1);
+				printObject(object->ifExtra->cond, level + 1);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" if part :\n");
-				printProgram(object->ifExtra->ifPart, level + 1);
+				printObject(object->ifExtra->ifPart, level + 1);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" else part :\n");
-				printProgram(object->ifExtra->elsePart, level + 1);
+				printObject(object->ifExtra->elsePart, level + 1);
 				break;
 
 			case Tt_whileloop:
-				printf("while\n");
+				printf("while %d\n", object->whileExtra->scopeSize);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
-				printProgram(object->whileExtra->cond, level + 1);
+				printObject(object->whileExtra->cond, level + 1);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" statements :\n");
-				printProgram(object->whileExtra->statements, level + 1);
+				printObject(object->whileExtra->statements, level + 1);
 				break;
 			case Tt_dowhileloop:
-				printf("do while\n");
+				printf("do while %d\n", object->doWhileExtra->scopeSize);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" statements :\n");
-				printProgram(object->doWhileExtra->statements, level + 1);
+				printObject(object->doWhileExtra->statements, level + 1);
 
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
-				printProgram(object->doWhileExtra->cond, level + 1);
+				printObject(object->doWhileExtra->cond, level + 1);
 				break;
 
 			case Tt_forloop:
-				printf("for\n");
+				printf("for %d\n", object->forExtra->scopeSize);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" init :\n");
-				printProgram(object->forExtra->initPart, level + 1);
+				printObject(object->forExtra->initPart, level + 1);
 
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
-				printProgram(object->forExtra->condPart, level + 1);
+				printObject(object->forExtra->condPart, level + 1);
 
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" after :\n");
-				printProgram(object->forExtra->afterPart, level + 1);
+				printObject(object->forExtra->afterPart, level + 1);
 
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" statements :\n");
-				printProgram(object->forExtra->statements, level + 1);
+				printObject(object->forExtra->statements, level + 1);
 
 				break;
 
@@ -390,12 +410,11 @@ public:
 				printf("%s", getTokenName(object->objectType));
 		}
 		printf("\n");
-		printProgram(object->firstChild, level + 1);
-		printProgram(object->nextSibling, level);
-
+		printObject(object->firstChild, level + 1);
+		printObject(object->nextSibling, level);
 	}
 
-	void deleteProgram(Object* object) {
+	void deleteObject(Object* object) {
 		if (object == nullptr) return;
 
 		switch (object->objectType) {
@@ -425,14 +444,37 @@ public:
 				break;
 		}
 
-		deleteProgram(object->nextSibling);
-		deleteProgram(object->firstChild);
-
+		deleteObject(object->nextSibling);
+		deleteObject(object->firstChild);
 
 		allocator.deleteMemory<Object>(object);
 	}
+public:
+	ProgramBuilder() {
+		varNameCheckStart = 0;
+	}
 
+	Program buildProgram(TokenList& tokenDataList) {
+		allNames.clear();
+		Object *object = buildSubProgram(tokenDataList);
+		Program program;
+		program.root = object;
+		program.globals = globalNames;
 
+		varNameCheckStart = 0;
+		varNames.clear();
+		globalNames.clear();
+		return program;
+	}
+
+	void printProgram(const Program& program) {
+		printObject(program.root, 0);
+	}
+
+	void deleteProgram(Program program) {
+		deleteObject(program.root);
+		program.globals.clear();
+	}
 };
 
 

@@ -18,11 +18,6 @@ const char* operatorStrings[] = {
 	"++",
 	"--",
 
-	"pre ++",
-	"post ++",
-	"pre --",
-	"post --",
-
 	"-",
 	"+",
 	"!",

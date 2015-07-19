@@ -8,21 +8,16 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	const char* str = "1+3;";
+	const char* str = "a;func b(){a = 3;}";
 
 	TokenList list;
-	printf("%s\n\n", str);
 	tokenizer.tokenize(str, list);
 
-	tokenizer.printList(list);
-
-	printf("---------\n");
+	//tokenizer.printList(list);
 
 
 	ProgramBuilder builder;
-
-	Object* program = builder.buildProgram(list);
-
+	Program program = builder.buildProgram(list);
 
 	builder.printProgram(program);
 
@@ -30,7 +25,8 @@ int main() {
 	Interpreter interpreter;
 
 	interpreter.interprete(program);
-
+	interpreter.printVal(program, "a");
+	interpreter.printVal(program, "i");
 	builder.deleteProgram(program);
 	system("pause");
 	return 0;

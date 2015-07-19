@@ -4,13 +4,14 @@
 #include <vector>
 
 enum TokenType {
+	Tt_integer,
+	Tt_float,
+	Tt_string,
 	Tt_whitespace,
 	Tt_comment_single,
 	Tt_comment_multi,
 	Tt_ws,
 	Tt_empty,
-	Tt_integer,
-	Tt_float,
 	Tt_operator,
 	Tt_semicolon,
 	Tt_if,
@@ -21,7 +22,6 @@ enum TokenType {
 	Tt_for,
 	Tt_while,
 	Tt_do,
-	Tt_string,
 	Tt_variable,
 	Tt_singleoperator,
 	Tt_variable_withpost,
@@ -67,11 +67,6 @@ enum OperatorType {
 	Op_inc,
 	Op_dec,
 
-	Op_pre_inc,
-	Op_post_inc,
-	Op_pre_dec,
-	Op_post_dec,
-
 	Op_negate,
 	Op_plus,
 
@@ -106,14 +101,13 @@ public:
 	}
 };
 
-
-
 class Object;
 
 typedef struct {
 	Object *cond;
 	Object *ifPart;
 	Object *elsePart;
+	unsigned scopeSize;
 }IfExtra;
 
 
@@ -122,11 +116,15 @@ typedef struct {
 	Object *condPart;
 	Object *afterPart;
 	Object *statements;
+
+	unsigned scopeSize;
 }ForExtra;
 
 typedef struct {
 	Object *cond;
 	Object *statements;
+
+	unsigned scopeSize;
 }WhileExtra, DoWhileExtra;
 
 
@@ -141,7 +139,6 @@ typedef struct {
 	Object *name;
 	Object *values;
 }FuncCallExtra;
-
 
 class Object {
 public:
@@ -173,19 +170,17 @@ public:
 		DoWhileExtra *doWhileExtra;
 		FuncDefExtra *funcDefExtra;
 		FuncCallExtra *funcCallExtra;
-
-		unsigned variableIndex;
 	};
 };
 
 class Program {
 public:
 	Object *root;
+	std::vector<std::string> globals;
 };
 
 class MemoryAllocator {
 public:
-
 	int allocSize;
 
 	MemoryAllocator() {
