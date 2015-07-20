@@ -1,5 +1,5 @@
 #include "Tools.h"
-
+#include<assert.h>
 const char* operatorStrings[] = {
 	"err",
 	"+",
@@ -27,6 +27,8 @@ const char* operatorStrings[] = {
 char* tokenNames[Tt_count];
 
 void buildTools() {
+	assert(sizeof(float) == 4);
+
 	tokenNames[Tt_whitespace] = "whitespace";
 	tokenNames[Tt_comment_single] = "comment_single";
 	tokenNames[Tt_comment_multi] = "comment_multi";

@@ -258,7 +258,7 @@ public:
 			printf("%s (", getTokenName(list[i].tokenType));
 			if (list[i].tokenLength < 20) {
 				bool oldSpace = true;
-				for (int k = 0; k < list[i].tokenLength; k++) {
+				for (uint32_t k = 0; k < list[i].tokenLength; k++) {
 					char c = list[i].tokenBegin[k];
 					if (c == ' ' || c == '\n' || c == '\t') {
 						if (oldSpace == false) {

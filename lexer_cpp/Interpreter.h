@@ -11,7 +11,7 @@ class Interpreter {
 	struct Value {
 		TokenType valueType;
 		union {
-			int intVal;
+			int32_t intVal;
 			float floatVal;
 		};
 	};
@@ -37,7 +37,7 @@ class Interpreter {
 			case Tt_float:
 				switch (newType) {
 					case Tt_integer:
-						value->intVal = (int)value->floatVal;
+						value->intVal = (int32_t)value->floatVal;
 						break;
 					case Tt_string:
 						// TODO
@@ -209,7 +209,7 @@ class Interpreter {
 								variableStackPointer[object->firstChild->nextSibling->intVal].intVal++;
 								break;
 							case Tt_float:
-								variableStackPointer[object->firstChild->nextSibling->intVal].floatVal += 1.0f;
+								variableStackPointer[object->firstChild->nextSibling->intVal].floatVal += 1.0f;  // perfect
 								break;
 						}
 						break;

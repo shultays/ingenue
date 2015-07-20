@@ -2,6 +2,7 @@
 #define TOOLS_H
 
 #include <vector>
+#include <cstdint>
 
 enum TokenType {
 	Tt_integer,
@@ -85,7 +86,7 @@ public:
 	TokenType tokenType;
 
 	const char *tokenBegin;
-	int tokenLength;
+	uint32_t tokenLength;
 
 	TokenList children;
 
@@ -94,7 +95,7 @@ public:
 		tokenBegin = nullptr;
 		tokenLength = -1;
 	}
-	Token(TokenType tokenType, const char *tokenBegin, int tokenLength = 0) {
+	Token(TokenType tokenType, const char *tokenBegin, uint32_t tokenLength = 0) {
 		this->tokenType = tokenType;
 		this->tokenBegin = tokenBegin;
 		this->tokenLength = tokenLength;
@@ -107,7 +108,7 @@ typedef struct {
 	Object *cond;
 	Object *ifPart;
 	Object *elsePart;
-	unsigned scopeSize;
+	uint32_t scopeSize;
 }IfExtra;
 
 
@@ -117,14 +118,14 @@ typedef struct {
 	Object *afterPart;
 	Object *statements;
 
-	unsigned scopeSize;
+	uint32_t scopeSize;
 }ForExtra;
 
 typedef struct {
 	Object *cond;
 	Object *statements;
 
-	unsigned scopeSize;
+	uint32_t scopeSize;
 }WhileExtra, DoWhileExtra;
 
 
@@ -158,7 +159,7 @@ public:
 
 	union {
 		void* extra;
-		int intVal;
+		int32_t intVal;
 		float floatVal;
 		char* pChar;
 
@@ -181,7 +182,7 @@ public:
 
 class MemoryAllocator {
 public:
-	int allocSize;
+	uint32_t allocSize;
 
 	MemoryAllocator() {
 		allocSize = 0;
@@ -217,5 +218,104 @@ void buildTools();
 
 const char* getTokenName(TokenType type);
 const char* getOperatorString(int type);
+
+
+class DynamicAllocator {
+public:
+	static const uint32_t buffSize = 1000;
+
+	struct Header {
+		uint32_t isAllocated : 1;
+		uint32_t size : 31;
+	};
+
+	Header* buff;
+	Header* firstFreeHeader;
+
+	Header* end;
+public:
+	DynamicAllocator() {
+		buff = new Header[buffSize];
+		memset(buff, 0, buffSize * sizeof(Header));
+
+		end = buff + buffSize;
+		firstFreeHeader = buff;
+
+		firstFreeHeader->size = buffSize;
+	}
+
+	~DynamicAllocator() {
+		delete[] buff;
+	}
+
+	uint32_t allocId(uint32_t size) {
+		if (size == 0) return 0;
+		size = ((size + sizeof(Header)-1) / sizeof(Header)) + 1;
+
+		Header *cursor = firstFreeHeader;
+
+		while (cursor < end) {
+			if (cursor->isAllocated || cursor->size < size) {
+				cursor += cursor->size;
+				continue;
+			}
+
+			cursor->isAllocated = 1;
+			uint32_t oldSize = cursor->size;
+			cursor->size = size;
+
+			Header*cursor2 = cursor + size;
+
+			if (oldSize > size) {
+				cursor2->isAllocated = 0;
+				cursor2->size = oldSize - size;
+			}
+
+			if (firstFreeHeader == cursor) {
+				while (cursor2->isAllocated == 1 && cursor2 < end) {
+					cursor2 += cursor2->size;
+				}
+				firstFreeHeader = cursor2;
+			}
+
+			return cursor + 1 - buff;
+		}
+		return 0;
+	}
+
+	void freeId(uint32_t id) {
+		Header* cursor = buff + id - 1;
+		cursor->isAllocated = 0;
+		Header* next = cursor + cursor->size;
+		if (next < end && next->isAllocated == 0) {
+			cursor->size += next->size;
+		}
+		if (firstFreeHeader > cursor) {
+			firstFreeHeader = cursor;
+		}
+	}
+
+	void* alloc(uint32_t size) {
+		if (size == 0) return nullptr;
+		return (void*)(buff + allocId(size));
+	}
+
+	void free(void* p) {
+		freeId(((Header*)p) - buff);
+	}
+
+	template<class T>
+	T* alloc(int count = 0) {
+		uint32_t size = sizeof(T)* count;
+		return alloc(size);
+	}
+
+
+	template<class T>
+	uint32_t allocId(int count = 0) {
+		uint32_t size = sizeof(T)* count;
+		return allocId(size);
+	}
+};
 
 #endif

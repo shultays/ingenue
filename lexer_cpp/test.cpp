@@ -3,7 +3,6 @@
 #include "ProgramBuilder.h"
 #include "Interpreter.h"
 
-
 int main() {
 	buildTools();
 	Tokenizer tokenizer;

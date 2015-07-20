@@ -43,7 +43,7 @@ class ProgramBuilder {
 
 	std::map < Object*, std::string> allNames; // debug
 
-	std::stack<int> scopeSizeStack;
+	std::stack<uint32_t> scopeSizeStack;
 
 
 	int getVariableIndex(std::string varName, Object* object) {
@@ -195,7 +195,7 @@ class ProgramBuilder {
 			if (it->objectType != Tt_operator) {
 				newOrder.push(it);
 			} else {
-				while (!opStack.empty() && operatorPrecedences[(int)opStack.top()->extra] > operatorPrecedences[(int)it->extra]) {
+				while (!opStack.empty() && operatorPrecedences[opStack.top()->opType] > operatorPrecedences[it->opType]) {
 					newOrder.push(opStack.top());
 					opStack.pop();
 				}
