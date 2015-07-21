@@ -135,7 +135,8 @@ void Tokenizer::buildTokenList() {
 
 	addToken(Tt_value_one,
 		oneOf(Tt_assignment, Tt_funccall, Tt_variable, Tt_integer, Tt_float, Tt_string, Tt_variable_withpre,
-		Tt_variable_withpost, join(Tt_unary, Tt_value_one), join(Tt_p_left, Tt_value, Tt_p_right)
+		Tt_variable_withpost, join(Tt_unary, Tt_value_one), join(Tt_p_left, Tt_value, Tt_p_right),
+		Tt_funcdef
 		)
 		).makeAnonymous();
 
@@ -148,6 +149,7 @@ void Tokenizer::buildTokenList() {
 	addToken(Tt_assign, fromString("=")).makeAnonymous();
 
 	addToken(Tt_assignment, join(Tt_variable, Tt_assign, Tt_value));
+
 
 	addToken(Tt_multiple_statement, oneOrMore(Tt_statement));
 
@@ -164,17 +166,16 @@ void Tokenizer::buildTokenList() {
 		Tt_forloop,
 		Tt_whileloop,
 		Tt_dowhileloop,
-		Tt_semicolon,
-		Tt_funcdef
+		Tt_semicolon
 		)
 		);
 
 	addToken(Tt_funcdef, join(
-		fromString("func"), Tt_variable,
+		fromString("func"),
 		Tt_p_left,
 		atMostOne(join(Tt_variable, zeroOrMore(join(fromString(","), Tt_variable)))),
 		Tt_p_right,
-		Tt_statement)
+		Tt_cp_left, Tt_statement, Tt_cp_right)
 		);
 
 	addToken(Tt_funccall,

@@ -37,31 +37,30 @@ int operatorPrecedences[] = {
 class ProgramBuilder {
 	MemoryAllocator allocator;
 
-	unsigned varNameCheckStart;
 	std::vector<std::string> varNames;
 	std::vector<std::string> globalNames;
 
 	std::map < Object*, std::string> allNames; // debug
 
 	std::stack<uint32_t> scopeSizeStack;
+	std::stack<uint32_t> varNameCheckStartStack;
 
 
 	int getVariableIndex(std::string varName, Object* object) {
 		allNames[object] = varName;
-
-		for (unsigned i = varNameCheckStart; i < varNames.size(); i++) {
-			if (varNames[i] == varName) return ((int)i) - varNameCheckStart;
+		for (unsigned i = varNameCheckStartStack.top(); i < varNames.size(); i++) {
+			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
 		}
+
 		for (unsigned i = 0; i < globalNames.size(); i++) {
 			if (globalNames[i] == varName) return -((int)i) - 1;
 		}
-
 		varNames.push_back(varName);
 		if (scopeSizeStack.size() == 1) {
 			globalNames.push_back(varName);
 		}
 
-		return varNames.size() - 1;
+		return varNames.size() - 1 - varNameCheckStartStack.top();
 	}
 
 	static OperatorType getOperatorType(Token& tokenData, bool isUnary) {
@@ -152,14 +151,10 @@ class ProgramBuilder {
 	}
 
 	void configureFuncDefObject(Object *object) {
-		varNameCheckStart = object->intVal;
-
-		Object *temp = object->firstChild->nextSibling;
+		Object *temp = object->firstChild;
 		object->funcDefExtra = allocator.getMemory<FuncDefExtra>();
-		object->funcDefExtra->name = object->firstChild;
-		object->funcDefExtra->name->nextSibling = nullptr;
-
 		Object **place = &(object->funcDefExtra->parameters);
+
 		while (temp->objectType != Tt_statement) {
 			*place = temp;
 			place = &((*place)->nextSibling);
@@ -168,6 +163,12 @@ class ProgramBuilder {
 		*place = nullptr;
 		object->funcDefExtra->func_body = temp;
 		object->firstChild = nullptr;
+
+		object->funcDefExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		varNames.resize(scopeSizeStack.top());
+		scopeSizeStack.pop();
+
+		varNameCheckStartStack.pop();
 	}
 
 
@@ -271,7 +272,9 @@ class ProgramBuilder {
 				object->floatVal = (float)atof(strnull);
 				break;
 			case Tt_string:
-				object->pChar[tokenData.tokenLength] = '\0';
+				object->pChar = allocator.getMemory<char>(tokenData.tokenLength - 1);
+				memcpy(object->pChar, tokenData.tokenBegin + 1, tokenData.tokenLength - 2);
+				object->pChar[tokenData.tokenLength - 2] = '\0';
 				break;
 			case Tt_variable:
 				memcpy(strnull, tokenData.tokenBegin, tokenData.tokenLength);
@@ -292,8 +295,8 @@ class ProgramBuilder {
 				scopeSizeStack.push(varNames.size());
 				break;
 			case Tt_funcdef:
-				object->intVal = varNameCheckStart;
-				varNameCheckStart = varNames.size();
+				scopeSizeStack.push(varNames.size());
+				varNameCheckStartStack.push(varNames.size());
 				break;
 		}
 
@@ -327,6 +330,7 @@ class ProgramBuilder {
 	}
 
 	void printObject(Object* object, int level = 0) {
+		Object* temp;
 		if (object == nullptr) return;
 		for (int i = 0; i < level * 2; i++) printf(" ");
 		bool moveVariableStack = false;
@@ -406,6 +410,17 @@ class ProgramBuilder {
 
 				break;
 
+			case Tt_funcdef:
+				printf("func (");
+				temp = object->funcDefExtra->parameters;
+				while (temp) {
+					printf("%s", allNames[temp].c_str());
+					temp = temp->nextSibling;
+					if (temp) printf(", ");
+				}
+				printf(")\n");
+				printObject(object->funcDefExtra->func_body, level + 1);
+				break;
 			default:
 				printf("%s", getTokenName(object->objectType));
 		}
@@ -451,7 +466,7 @@ class ProgramBuilder {
 	}
 public:
 	ProgramBuilder() {
-		varNameCheckStart = 0;
+		varNameCheckStartStack.push(0);
 	}
 
 	Program buildProgram(TokenList& tokenDataList) {
@@ -460,8 +475,6 @@ public:
 		Program program;
 		program.root = object;
 		program.globals = globalNames;
-
-		varNameCheckStart = 0;
 		varNames.clear();
 		globalNames.clear();
 		return program;

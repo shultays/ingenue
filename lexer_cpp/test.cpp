@@ -7,12 +7,13 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	const char* str = "a;func b(){a = 3;}";
+	const char* str = "b = func (){a;};";
 
 	TokenList list;
 	tokenizer.tokenize(str, list);
 
-	//tokenizer.printList(list);
+	tokenizer.printList(list);
+	system("pause");
 
 
 	ProgramBuilder builder;
@@ -25,7 +26,8 @@ int main() {
 
 	interpreter.interprete(program);
 	interpreter.printVal(program, "a");
-	interpreter.printVal(program, "i");
+	interpreter.printVal(program, "b");
+	interpreter.printVal(program, "c");
 	builder.deleteProgram(program);
 	system("pause");
 	return 0;

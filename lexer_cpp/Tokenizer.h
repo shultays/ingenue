@@ -16,6 +16,7 @@ class Tokenizer {
 	class TokenDef : public TokenValidator {
 	public:
 		TokenType tokenType;
+		TokenType alias;
 		bool valid;
 		bool anonymous;
 
@@ -23,18 +24,21 @@ class Tokenizer {
 			tokenType = Tt_invalid;
 			valid = false;
 			anonymous = false;
+			alias = Tt_invalid;
 		}
 
 		TokenDef(TokenValidator validator) : TokenValidator(validator) {
 			tokenType = Tt_invalid;
 			valid = true;
 			anonymous = false;
+			alias = Tt_invalid;
 		}
 
 		TokenDef(TokenType tokenType, TokenValidator validator) : TokenValidator(validator) {
 			this->tokenType = tokenType;
 			valid = true;
 			anonymous = false;
+			alias = Tt_invalid;
 		}
 
 		int validate(const char* code, TokenList& tokenDataList) const {
@@ -52,6 +56,10 @@ class Tokenizer {
 
 		TokenDef& makeAnonymous() {
 			anonymous = true;
+			return *this;
+		}
+		TokenDef& setAlias(TokenType type) {
+			alias = type;
 			return *this;
 		}
 	};
@@ -258,7 +266,7 @@ public:
 			printf("%s (", getTokenName(list[i].tokenType));
 			if (list[i].tokenLength < 20) {
 				bool oldSpace = true;
-				for (uint32_t k = 0; k < list[i].tokenLength; k++) {
+				for (int k = 0; k < list[i].tokenLength; k++) {
 					char c = list[i].tokenBegin[k];
 					if (c == ' ' || c == '\n' || c == '\t') {
 						if (oldSpace == false) {

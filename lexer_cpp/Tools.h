@@ -42,6 +42,7 @@ enum TokenType {
 	Tt_whileloop,
 	Tt_dowhileloop,
 	Tt_funcdef,
+	Tt_anonfuncdef,
 	Tt_else,
 	Tt_program,
 
@@ -86,7 +87,7 @@ public:
 	TokenType tokenType;
 
 	const char *tokenBegin;
-	uint32_t tokenLength;
+	int32_t tokenLength;
 
 	TokenList children;
 
@@ -130,9 +131,10 @@ typedef struct {
 
 
 typedef struct {
-	Object *name;
 	Object *parameters;
 	Object *func_body;
+
+	uint32_t scopeSize;
 }FuncDefExtra;
 
 
@@ -222,8 +224,8 @@ const char* getOperatorString(int type);
 
 class DynamicAllocator {
 public:
-	static const uint32_t buffSize = 1000;
-
+	int buffSize;
+	int allocated;
 	struct Header {
 		uint32_t isAllocated : 1;
 		uint32_t size : 31;
@@ -234,19 +236,20 @@ public:
 
 	Header* end;
 public:
-	DynamicAllocator() {
-		buff = new Header[buffSize];
-		memset(buff, 0, buffSize * sizeof(Header));
+	void setBuffer(void* buff, uint32_t buffSize) {
+		this->buff = (Header*)buff;
+		this->buffSize = buffSize / sizeof(Header);
+		memset(buff, 0, this->buffSize * sizeof(Header));
 
-		end = buff + buffSize;
-		firstFreeHeader = buff;
+		end = this->buff + this->buffSize;
+		firstFreeHeader = this->buff;
 
-		firstFreeHeader->size = buffSize;
+		firstFreeHeader->size = this->buffSize;
+
+		allocated = 0;
 	}
 
-	~DynamicAllocator() {
-		delete[] buff;
-	}
+	~DynamicAllocator() {}
 
 	uint32_t allocId(uint32_t size) {
 		if (size == 0) return 0;
@@ -278,13 +281,22 @@ public:
 				firstFreeHeader = cursor2;
 			}
 
+			allocated += size;
 			return cursor + 1 - buff;
 		}
 		return 0;
 	}
 
+	uint32_t getCopyId(uint32_t id) {
+		Header* cursor = buff + id - 1;
+		uint32_t copyId = allocId((cursor->size - 1) * sizeof(Header));
+		memcpy(getAddress(copyId), cursor + 1, (cursor->size - 1)* sizeof(Header));
+		return copyId;
+	}
+
 	void freeId(uint32_t id) {
 		Header* cursor = buff + id - 1;
+		allocated -= cursor->size;
 		cursor->isAllocated = 0;
 		Header* next = cursor + cursor->size;
 		if (next < end && next->isAllocated == 0) {
@@ -312,9 +324,12 @@ public:
 
 
 	template<class T>
-	uint32_t allocId(int count = 0) {
+	uint32_t allocId(int count = 1) {
 		uint32_t size = sizeof(T)* count;
 		return allocId(size);
+	}
+	void* getAddress(uint32_t id) {
+		return (void*)(buff + id);
 	}
 };
 
