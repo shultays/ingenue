@@ -46,10 +46,10 @@ class Interpreter {
 		switch (value->valueType) {
 			case Vt_integer:
 				switch (newType) {
-					case Tt_float:
+					case Vt_float:
 						value->floatVal = (float)value->intVal;
 						break;
-					case Tt_string:
+					case Vt_string:
 						l = sprintf_s(temp, "%d", value->intVal);
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
@@ -58,10 +58,10 @@ class Interpreter {
 				break;
 			case Vt_float:
 				switch (newType) {
-					case Tt_integer:
+					case Vt_integer:
 						value->intVal = (int32_t)value->floatVal;
 						break;
-					case Tt_string:
+					case Vt_string:
 						l = sprintf_s(temp, "%f", value->floatVal);
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
@@ -220,11 +220,7 @@ class Interpreter {
 			case Tt_assignment:
 				v = interpretValue(object->firstChild->nextSibling);
 
-				if (object->firstChild->intVal >= 0) {
-					variable = &variableStackPointer[object->firstChild->intVal];
-				} else {
-					variable = &variableGlobalPointer[1 - object->firstChild->intVal];
-				}
+				variable = getVariableValue(object->firstChild->intVal);
 
 				*variable = *v;
 
@@ -235,12 +231,7 @@ class Interpreter {
 				break;
 			case Tt_variable:
 				v = valueStackPointer++;
-
-				if (object->intVal >= 0) {
-					variable = &variableStackPointer[object->intVal];
-				} else {
-					variable = &variableGlobalPointer[1 - object->intVal];
-				}
+				variable = getVariableValue(object->intVal);
 				*v = *variable;
 
 				if (isValueDynamic(v)) {
@@ -250,13 +241,7 @@ class Interpreter {
 				break;
 
 			case Tt_variable_withpost:
-
-				if (object->firstChild->intVal >= 0) {
-					variable = &variableStackPointer[object->firstChild->intVal];
-				} else {
-					variable = &variableGlobalPointer[1 - object->firstChild->intVal];
-				}
-
+				variable = getVariableValue(object->firstChild->intVal);
 				if (isValueDynamic(variable)) {
 					printf("Undefined operator.\n");
 					break;
@@ -289,11 +274,7 @@ class Interpreter {
 
 			case Tt_variable_withpre:
 
-				if (object->firstChild->nextSibling->intVal >= 0) {
-					variable = &variableStackPointer[object->firstChild->nextSibling->intVal];
-				} else {
-					variable = &variableGlobalPointer[1 - object->firstChild->nextSibling->intVal];
-				}
+				variable = getVariableValue(object->firstChild->nextSibling->intVal);
 
 				if (isValueDynamic(variable)) {
 					printf("Undefined operator.\n");
@@ -350,7 +331,35 @@ class Interpreter {
 				*temp = object;
 				break;
 			case Tt_funccall:
-				// TODO
+				v = interpretValue(object->funcCallExtra->name);
+
+				{
+					Object* funcDef = *(Object**)allocator.getAddress(v->intVal);
+
+					Value* oldVariableStackPointer = variableStackPointer;
+					variableStackPointer = valueStackPointer;
+					memset(valueStackPointer, 0, sizeof(Value)*funcDef->funcDefExtra->parameterCount);
+
+					Object* p = object->funcCallExtra->values;
+					while (p) {
+						if (p->objectType == Tt_comma) {
+							p = p->nextSibling;
+							continue;
+						}
+						if (valueStackPointer >= variableStackPointer + funcDef->funcDefExtra->parameterCount) {
+							printf("Too many parameters for function\n");
+							break;
+						}
+						*valueStackPointer = *interpretValue(p);
+						valueStackPointer++;
+						p = p->nextSibling;
+					}
+					valueStackPointer = variableStackPointer + funcDef->funcDefExtra->parameterCount;
+					interpretFlow(funcDef->funcDefExtra->func_body);
+					valueStackPointer -= funcDef->funcDefExtra->parameterCount;
+					variableStackPointer = oldVariableStackPointer;
+
+				}
 				break;
 			case Tt_operator:
 				vPrev = valueStackPointer - 1;
@@ -363,13 +372,13 @@ class Interpreter {
 					}
 				}
 				switch (vPrev->valueType) {
-					case Tt_string:
+					case Vt_string:
 						v = interpereteStringOperator(object, vPrev2, vPrev);
 						break;
-					case Tt_float:
+					case Vt_float:
 						v = interpereteFloatOperator(object, vPrev2, vPrev);
 						break;
-					case Tt_integer:
+					case Vt_integer:
 						v = interpereteIntegerOperator(object, vPrev2, vPrev);
 						break;
 				}
@@ -383,25 +392,30 @@ class Interpreter {
 
 				break;
 		}
-		vPrev2 = interpretValue(object->nextSibling);
+		if (object->nextSibling) {
+			if (object->nextSibling->objectType > Tt_valuetypes_start && object->nextSibling->objectType < Tt_valuetypes_end) {
+				vPrev2 = interpretValue(object->nextSibling);
+			}
+		}
+
 		valueStackPointer = oldValueStackPointer;
 		return vPrev2 ? vPrev2 : v;
 	}
 
 	bool valueToBool(Value* v) {
 		switch (v->valueType) {
-			case Tt_integer:
+			case Vt_integer:
 				return v->intVal != 0;
-			case Tt_float:
+			case Vt_float:
 				return v->floatVal != 0.0f;
-			case Tt_string:
+			case Vt_string:
 				// TODO
 				break;
 		}
 		return 0;
 	}
 
-	int interpretFlow(Object *object) {
+	int interpretFlow(Object *object, bool goNext = true) {
 		if (object == nullptr) return 0;
 
 		int result = 0;
@@ -411,7 +425,7 @@ class Interpreter {
 				break;
 			case Tt_multiple_statement:
 			case Tt_program:
-				memset(valueStackPointer, 0, sizeof(Object)*object->intVal); // new variables
+				memset(valueStackPointer, 0, sizeof(Value)*object->intVal); // new variables
 
 				valueStackPointer += object->intVal;
 				result = interpretFlow(object->firstChild);
@@ -428,47 +442,44 @@ class Interpreter {
 				return true;
 				break;
 			case Tt_whileloop:
-				memset(valueStackPointer, 0, sizeof(Object)*object->whileExtra->scopeSize); // new variables
+				memset(valueStackPointer, 0, sizeof(Value)*object->whileExtra->parameterCount); // new variables
 
-				valueStackPointer += object->whileExtra->scopeSize;
+				valueStackPointer += object->whileExtra->parameterCount;
 				while (valueToBool(interpretValue(object->whileExtra->cond))) {
 					interpretFlow(object->whileExtra->statements);
 				}
-				valueStackPointer -= object->whileExtra->scopeSize;
+				valueStackPointer -= object->whileExtra->parameterCount;
 				break;
 			case Tt_dowhileloop:
-				memset(valueStackPointer, 0, sizeof(Object)*object->doWhileExtra->scopeSize); // new variables
+				memset(valueStackPointer, 0, sizeof(Value)*object->doWhileExtra->parameterCount); // new variables
 
-				valueStackPointer += object->doWhileExtra->scopeSize;
+				valueStackPointer += object->doWhileExtra->parameterCount;
 				do {
 					interpretFlow(object->doWhileExtra->statements);
 				} while (valueToBool(interpretValue(object->doWhileExtra->cond)));
-				valueStackPointer -= object->doWhileExtra->scopeSize;
+				valueStackPointer -= object->doWhileExtra->parameterCount;
 				break;
 			case Tt_ifcond:
-				memset(valueStackPointer, 0, sizeof(Object)*object->ifExtra->scopeSize); // new variables
+				memset(valueStackPointer, 0, sizeof(Value)*object->ifExtra->parameterCount); // new variables
 
-				valueStackPointer += object->ifExtra->scopeSize;
+				valueStackPointer += object->ifExtra->parameterCount;
 				if (valueToBool(interpretValue(object->ifExtra->cond))) {
 					result = interpretFlow(object->ifExtra->ifPart);
 				} else {
 					result = interpretFlow(object->ifExtra->elsePart);
 				}
-				valueStackPointer -= object->ifExtra->scopeSize;
+				valueStackPointer -= object->ifExtra->parameterCount;
 				break;
 			case Tt_forloop:
-				memset(valueStackPointer, 0, sizeof(Object)*object->forExtra->scopeSize); // new variables
+				memset(valueStackPointer, 0, sizeof(Value)*object->forExtra->parameterCount); // new variables
 
-				valueStackPointer += object->forExtra->scopeSize;
+				valueStackPointer += object->forExtra->parameterCount;
 				for (interpretValue(object->forExtra->initPart); valueToBool(interpretValue(object->forExtra->condPart)); interpretValue(object->forExtra->afterPart)) {
 					if (interpretFlow(object->forExtra->statements)) break;
 				}
-				valueStackPointer -= object->forExtra->scopeSize;
+				valueStackPointer -= object->forExtra->parameterCount;
 				break;
-			case Tt_funcdef:
-			case Tt_funccall:
 			case Tt_value:
-			case Tt_assignment:
 				interpretValue(object->firstChild);
 				if (valueStackPointer->valueType == Tt_string) {
 					allocator.freeId(valueStackPointer->intVal);
@@ -476,7 +487,10 @@ class Interpreter {
 				break;
 		}
 		if (result) return result;
-		return interpretFlow(object->nextSibling);
+		if (goNext) {
+			return interpretFlow(object->nextSibling);
+		}
+		return 0;
 	}
 
 
@@ -487,8 +501,8 @@ public:
 		heap = allData + STACK_SIZE;
 		allocator.setBuffer(heap, HEAP_SIZE);
 
-		valueStackPointer = (Value*)stack;
-		variableStackPointer = valueStackPointer;
+		variableStackPointer = (Value*)stack;
+		valueStackPointer = variableStackPointer;
 		variableGlobalPointer = variableStackPointer;
 	}
 
@@ -498,8 +512,8 @@ public:
 
 	void interprete(const Program& program) {
 		valueStackPointer = (Value*)stack;
-		variableStackPointer = valueStackPointer;
-		variableGlobalPointer = variableStackPointer;
+		variableStackPointer = (Value*)stack;
+		valueStackPointer = variableStackPointer;
 		interpretFlow(program.root);
 	}
 
@@ -508,16 +522,16 @@ public:
 			if (program.globals[i] == varName) {
 				Value* v = &variableStackPointer[i];
 				switch (v->valueType) {
-					case Tt_integer:
+					case Vt_integer:
 						printf("%s = %d\n", varName.c_str(), v->intVal);
 						break;
-					case Tt_float:
+					case Vt_float:
 						printf("%s = %f\n", varName.c_str(), v->floatVal);
 						break;
-					case Tt_string:
+					case Vt_string:
 						printf("%s = %s\n", varName.c_str(), allocator.getAddress(v->intVal));
 						break;
-					case Tt_funcdef:
+					case Vt_function:
 						printf("%s = func\n", varName.c_str());
 						break;
 				}
@@ -526,6 +540,17 @@ public:
 		}
 		printf("There is no global named '%s'\n", varName.c_str());
 	}
+
+	Value* getVariableValue(int32_t intVal) {
+
+		if (intVal >= 0) {
+			return &variableStackPointer[intVal];
+		} else {
+			return &variableGlobalPointer[-1 - intVal];
+		}
+	}
+
+
 };
 
 #endif

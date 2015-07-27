@@ -87,7 +87,7 @@ class ProgramBuilder {
 		object->whileExtra = allocator.getMemory<WhileExtra>();
 		object->whileExtra->cond = temp;
 		object->whileExtra->statements = temp->nextSibling;
-		object->whileExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		object->whileExtra->parameterCount = varNames.size() - scopeSizeStack.top();
 		varNames.resize(scopeSizeStack.top());
 		scopeSizeStack.pop();
 		temp->nextSibling = nullptr;
@@ -99,7 +99,7 @@ class ProgramBuilder {
 		object->doWhileExtra = allocator.getMemory<DoWhileExtra>();
 		object->doWhileExtra->cond = temp->nextSibling;
 		object->doWhileExtra->statements = temp;
-		object->doWhileExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		object->doWhileExtra->parameterCount = varNames.size() - scopeSizeStack.top();
 		varNames.resize(scopeSizeStack.top());
 		scopeSizeStack.pop();
 		temp->nextSibling = nullptr;
@@ -117,7 +117,7 @@ class ProgramBuilder {
 		object->forExtra->condPart->nextSibling = nullptr;
 		object->forExtra->initPart = temp;
 		object->forExtra->initPart->nextSibling = nullptr;
-		object->forExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		object->forExtra->parameterCount = varNames.size() - scopeSizeStack.top();
 		varNames.resize(scopeSizeStack.top());
 		scopeSizeStack.pop();
 		object->firstChild = nullptr;
@@ -145,7 +145,7 @@ class ProgramBuilder {
 		temp->nextSibling = nullptr;
 		object->firstChild = nullptr;
 
-		object->ifExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		object->ifExtra->parameterCount = varNames.size() - scopeSizeStack.top();
 		varNames.resize(scopeSizeStack.top());
 		scopeSizeStack.pop();
 	}
@@ -155,16 +155,18 @@ class ProgramBuilder {
 		object->funcDefExtra = allocator.getMemory<FuncDefExtra>();
 		Object **place = &(object->funcDefExtra->parameters);
 
-		while (temp->objectType != Tt_statement) {
+		int parameterCount = 0;
+		while (temp->objectType != Tt_multiple_statement) {
 			*place = temp;
 			place = &((*place)->nextSibling);
 			temp = temp->nextSibling;
+			parameterCount++;
 		}
 		*place = nullptr;
 		object->funcDefExtra->func_body = temp;
 		object->firstChild = nullptr;
 
-		object->funcDefExtra->scopeSize = varNames.size() - scopeSizeStack.top();
+		object->funcDefExtra->parameterCount = parameterCount;
 		varNames.resize(scopeSizeStack.top());
 		scopeSizeStack.pop();
 
@@ -358,7 +360,7 @@ class ProgramBuilder {
 				printf("%s %s", getOperatorString(object->opType), object->opType >= Op_negate ? " (unary)" : "");
 				break;
 			case Tt_ifcond:
-				printf("if %d\n", object->ifExtra->scopeSize);
+				printf("if %d\n", object->ifExtra->parameterCount);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
 				printObject(object->ifExtra->cond, level + 1);
@@ -371,7 +373,7 @@ class ProgramBuilder {
 				break;
 
 			case Tt_whileloop:
-				printf("while %d\n", object->whileExtra->scopeSize);
+				printf("while %d\n", object->whileExtra->parameterCount);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" condition :\n");
 				printObject(object->whileExtra->cond, level + 1);
@@ -380,7 +382,7 @@ class ProgramBuilder {
 				printObject(object->whileExtra->statements, level + 1);
 				break;
 			case Tt_dowhileloop:
-				printf("do while %d\n", object->doWhileExtra->scopeSize);
+				printf("do while %d\n", object->doWhileExtra->parameterCount);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" statements :\n");
 				printObject(object->doWhileExtra->statements, level + 1);
@@ -391,7 +393,7 @@ class ProgramBuilder {
 				break;
 
 			case Tt_forloop:
-				printf("for %d\n", object->forExtra->scopeSize);
+				printf("for %d\n", object->forExtra->parameterCount);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(" init :\n");
 				printObject(object->forExtra->initPart, level + 1);
@@ -414,7 +416,7 @@ class ProgramBuilder {
 				printf("func (");
 				temp = object->funcDefExtra->parameters;
 				while (temp) {
-					printf("%s", allNames[temp].c_str());
+					printf("%s (%d)", allNames[temp].c_str(), temp->intVal);
 					temp = temp->nextSibling;
 					if (temp) printf(", ");
 				}

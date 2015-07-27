@@ -7,13 +7,12 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	const char* str = "b = func (){a;};";
-
+	const char* str = "a;b=func(c){z=55;a=z+c;};b(12);";
+	//str = "a=1;";
 	TokenList list;
 	tokenizer.tokenize(str, list);
 
 	tokenizer.printList(list);
-	system("pause");
 
 
 	ProgramBuilder builder;
@@ -28,6 +27,9 @@ int main() {
 	interpreter.printVal(program, "a");
 	interpreter.printVal(program, "b");
 	interpreter.printVal(program, "c");
+	interpreter.printVal(program, "d");
+	interpreter.printVal(program, "e");
+	interpreter.printVal(program, "f");
 	builder.deleteProgram(program);
 	system("pause");
 	return 0;

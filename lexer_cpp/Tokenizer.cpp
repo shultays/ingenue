@@ -170,18 +170,19 @@ void Tokenizer::buildTokenList() {
 		)
 		);
 
+	addToken(Tt_comma, fromString(","));
 	addToken(Tt_funcdef, join(
 		fromString("func"),
 		Tt_p_left,
 		atMostOne(join(Tt_variable, zeroOrMore(join(fromString(","), Tt_variable)))),
 		Tt_p_right,
-		Tt_cp_left, Tt_statement, Tt_cp_right)
+		Tt_cp_left, Tt_multiple_statement, Tt_cp_right)
 		);
 
 	addToken(Tt_funccall,
 		join(Tt_variable,
 		Tt_p_left,
-		atMostOne(join(Tt_value, zeroOrMore(join(fromString(","), Tt_value)))),
+		atMostOne(join(Tt_value, zeroOrMore(join(Tt_comma, Tt_value)))),
 		Tt_p_right)
 		);
 

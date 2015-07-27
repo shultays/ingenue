@@ -5,15 +5,25 @@
 #include <cstdint>
 
 enum TokenType {
+	Tt_valuetypes_start,
+	Tt_value,
 	Tt_integer,
 	Tt_float,
 	Tt_string,
+	Tt_variable,
+	Tt_assignment,
+	Tt_funccall,
+	Tt_variable_withpost,
+	Tt_variable_withpre,
+	Tt_operator,
+	Tt_funcdef,
+	Tt_valuetypes_end,
+	Tt_comma,
 	Tt_whitespace,
 	Tt_comment_single,
 	Tt_comment_multi,
 	Tt_ws,
 	Tt_empty,
-	Tt_operator,
 	Tt_semicolon,
 	Tt_if,
 	Tt_p_left,
@@ -23,16 +33,10 @@ enum TokenType {
 	Tt_for,
 	Tt_while,
 	Tt_do,
-	Tt_variable,
 	Tt_singleoperator,
-	Tt_variable_withpost,
-	Tt_variable_withpre,
-	Tt_value,
 	Tt_value_one,
 	Tt_unary,
 	Tt_assign,
-	Tt_assignment,
-	Tt_funccall,
 	Tt_statement,
 	Tt_multiple_statement,
 	Tt_return,
@@ -41,7 +45,6 @@ enum TokenType {
 	Tt_forloop,
 	Tt_whileloop,
 	Tt_dowhileloop,
-	Tt_funcdef,
 	Tt_anonfuncdef,
 	Tt_else,
 	Tt_program,
@@ -109,7 +112,7 @@ typedef struct {
 	Object *cond;
 	Object *ifPart;
 	Object *elsePart;
-	uint32_t scopeSize;
+	uint32_t parameterCount;
 }IfExtra;
 
 
@@ -119,14 +122,14 @@ typedef struct {
 	Object *afterPart;
 	Object *statements;
 
-	uint32_t scopeSize;
+	uint32_t parameterCount;
 }ForExtra;
 
 typedef struct {
 	Object *cond;
 	Object *statements;
 
-	uint32_t scopeSize;
+	uint32_t parameterCount;
 }WhileExtra, DoWhileExtra;
 
 
@@ -134,7 +137,7 @@ typedef struct {
 	Object *parameters;
 	Object *func_body;
 
-	uint32_t scopeSize;
+	uint32_t parameterCount;
 }FuncDefExtra;
 
 
