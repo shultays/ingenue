@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
+#include <string.h>
 
 enum TokenType {
 	Tt_valuetypes_start,

@@ -24,7 +24,7 @@ const char* operatorStrings[] = {
 };
 
 
-char* tokenNames[Tt_count];
+const char* tokenNames[Tt_count];
 
 void buildTools() {
 	assert(sizeof(float) == 4);

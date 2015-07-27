@@ -50,7 +50,7 @@ class Interpreter {
 						value->floatVal = (float)value->intVal;
 						break;
 					case Vt_string:
-						l = sprintf_s(temp, "%d", value->intVal);
+						l = snprintf(temp, sizeof(temp), "%d", value->intVal);
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
 						break;
@@ -62,7 +62,7 @@ class Interpreter {
 						value->intVal = (int32_t)value->floatVal;
 						break;
 					case Vt_string:
-						l = sprintf_s(temp, "%f", value->floatVal);
+						l = snprintf(temp, sizeof(temp), "%f", value->floatVal);
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
 						break;
@@ -481,7 +481,7 @@ class Interpreter {
 				break;
 			case Tt_value:
 				interpretValue(object->firstChild);
-				if (valueStackPointer->valueType == Tt_string) {
+				if (isValueDynamic(valueStackPointer)) {
 					allocator.freeId(valueStackPointer->intVal);
 				}
 				break;
@@ -529,7 +529,7 @@ public:
 						printf("%s = %f\n", varName.c_str(), v->floatVal);
 						break;
 					case Vt_string:
-						printf("%s = %s\n", varName.c_str(), allocator.getAddress(v->intVal));
+						printf("%s = %s\n", varName.c_str(), (char*)allocator.getAddress(v->intVal));
 						break;
 					case Vt_function:
 						printf("%s = func\n", varName.c_str());

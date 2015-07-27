@@ -164,3 +164,6 @@ pip-log.txt
 .class
 lexer/out
 interpreter/Debug
+
+*.*~
+*.out
