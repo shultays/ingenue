@@ -219,9 +219,7 @@ class Interpreter {
 				break;
 			case Tt_assignment:
 				v = interpretValue(object->firstChild->nextSibling);
-
 				variable = getVariableValue(object->firstChild->intVal);
-
 				*variable = *v;
 
 				if (isValueDynamic(variable)) {
@@ -323,14 +321,14 @@ class Interpreter {
 				break;
 
 
-			case Tt_funcdef:
+			case Tt_func_def:
 				v = valueStackPointer++;
 				v->valueType = Vt_function;
 				v->intVal = allocator.allocId<Object*>();
 				temp = (const Object**)allocator.getAddress(v->intVal);
 				*temp = object;
 				break;
-			case Tt_funccall:
+			case Tt_func_call:
 				v = interpretValue(object->funcCallExtra->name);
 
 				if(v->valueType == Vt_function){
