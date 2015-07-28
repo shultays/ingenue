@@ -7,8 +7,8 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	char str[1024] = "a=3;if(a==3){z=4;}";
-	str[0] = '\0';
+	char str[1024] = "a;c;b = func(a){a=3;c=5;};";
+	//str[0] = '\0';
 	//str = "a=1;";
 
 	//tokenizer.printList(list);
@@ -28,7 +28,7 @@ int main() {
 		{
 			programs.push_back(program);
 
-			//builder.printProgram(program);
+			builder.printProgram(program);
 
 			const Object* object = program->firstChild;
 			interpreter.interprete(program);

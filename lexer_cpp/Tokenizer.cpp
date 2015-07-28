@@ -134,9 +134,9 @@ void Tokenizer::buildTokenList() {
 	addToken(Tt_unary, oneOf(fromString("-"), fromString("+"), fromString("!")));
 
 	addToken(Tt_value_one,
-		oneOf(Tt_assignment, Tt_funccall, Tt_variable, Tt_integer, Tt_float, Tt_string, Tt_variable_withpre,
+		oneOf(Tt_assignment, Tt_func_call, Tt_variable, Tt_integer, Tt_float, Tt_string, Tt_variable_withpre,
 		Tt_variable_withpost, join(Tt_unary, Tt_value_one), join(Tt_p_left, Tt_value, Tt_p_right),
-		Tt_funcdef
+		Tt_func_def
 		)
 		).makeAnonymous();
 
@@ -171,15 +171,18 @@ void Tokenizer::buildTokenList() {
 		);
 
 	addToken(Tt_comma, fromString(","));
-	addToken(Tt_funcdef, join(
+
+	addToken(Tt_variable_def, join(Tt_variable));
+
+	addToken(Tt_func_def, join(
 		fromString("func"),
 		Tt_p_left,
-		atMostOne(join(Tt_variable, zeroOrMore(join(fromString(","), Tt_variable)))),
+		atMostOne(join(Tt_variable_def, zeroOrMore(join(fromString(","), Tt_variable_def)))),
 		Tt_p_right,
 		Tt_cp_left, Tt_multiple_statement, Tt_cp_right)
 		);
 
-	addToken(Tt_funccall,
+	addToken(Tt_func_call,
 		join(Tt_variable,
 		Tt_p_left,
 		atMostOne(join(Tt_value, zeroOrMore(join(Tt_comma, Tt_value)))),

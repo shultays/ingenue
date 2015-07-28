@@ -55,7 +55,7 @@ void buildTools() {
 	tokenNames[Tt_value] = "value";
 	tokenNames[Tt_value_one] = "value_one";
 	tokenNames[Tt_assignment] = "assignment";
-	tokenNames[Tt_funccall] = "funccall";
+	tokenNames[Tt_func_call] = "func_call";
 	tokenNames[Tt_statement] = "statement";
 	tokenNames[Tt_multiple_statement] = "multiple_statement";
 	tokenNames[Tt_return] = "return";
@@ -64,10 +64,11 @@ void buildTools() {
 	tokenNames[Tt_forloop] = "forloop";
 	tokenNames[Tt_whileloop] = "whileloop";
 	tokenNames[Tt_dowhileloop] = "dowhileloop";
-	tokenNames[Tt_funcdef] = "funcdef";
+	tokenNames[Tt_func_def] = "func_def";
 	tokenNames[Tt_else] = "else";
 	tokenNames[Tt_program] = "program";
 	tokenNames[Tt_assign] = "assign";
+	tokenNames[Tt_variable_def] = "variable_def";
 	//tokenNames[Tt_value_with_unary] = "value_with_unary";
 
 	tokenNames[Tt_invalid] = "invalid";

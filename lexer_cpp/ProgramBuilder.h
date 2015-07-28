@@ -46,7 +46,8 @@ class ProgramBuilder {
 
 	std::stack<uint32_t> scopeSizeStack;
 	std::stack<uint32_t> varNameCheckStartStack;
-
+	
+	int ignoreGlobals;
 
 	int getVariableIndex(std::string varName, Object* object) {
 		allNames[object] = varName;
@@ -54,8 +55,11 @@ class ProgramBuilder {
 			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
 		}
 
-		for (int i = 0; i < globalCount; i++) {
-			if (varNames[i] == varName) return -((int)i) - 1;
+		if(ignoreGlobals == 0)
+		{
+			for (int i = 0; i < globalCount; i++) {
+				if (varNames[i] == varName) return -((int)i) - 1;
+			}
 		}
 
 		varNames.push_back(varName);
@@ -237,10 +241,10 @@ class ProgramBuilder {
 			case Tt_forloop:
 				configureForObject(object);
 				break;
-			case Tt_funcdef:
+			case Tt_func_def:
 				configureFuncDefObject(object);
 				break;
-			case Tt_funccall:
+			case Tt_func_call:
 				configureFuncCallObject(object);
 				break;
 			case Tt_value:
@@ -256,6 +260,9 @@ class ProgramBuilder {
 				break;
 			case Tt_program:
 				object->intVal = varNames.size() - scopeSizeStack.top();
+				break;
+			case Tt_variable_def:
+				ignoreGlobals--;
 				break;
 			default:
 				break;
@@ -301,9 +308,12 @@ class ProgramBuilder {
 			case Tt_ifcond:
 				scopeSizeStack.push(varNames.size());
 				break;
-			case Tt_funcdef:
+			case Tt_func_def:
 				scopeSizeStack.push(varNames.size());
 				varNameCheckStartStack.push(varNames.size());
+				break;
+			case Tt_variable_def:
+				ignoreGlobals++;
 				break;
 		}
 
@@ -417,11 +427,11 @@ class ProgramBuilder {
 
 				break;
 
-			case Tt_funcdef:
+			case Tt_func_def:
 				printf("func (");
 				temp = object->funcDefExtra->parameters;
 				while (temp) {
-					printf("%s (%d)", allNames.at(temp).c_str(), temp->intVal);
+					printf("%s (%d)", allNames.at(temp->firstChild).c_str(), temp->intVal);
 					temp = temp->nextSibling;
 					if (temp) printf(", ");
 				}
@@ -452,10 +462,10 @@ class ProgramBuilder {
 			case Tt_forloop:
 				allocator.deleteMemory<ForExtra>(object->forExtra);
 				break;
-			case Tt_funcdef:
+			case Tt_func_def:
 				allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
 				break;
-			case Tt_funccall:
+			case Tt_func_call:
 				allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
 				break;
 			case Tt_string:
@@ -475,6 +485,7 @@ public:
 	ProgramBuilder() {
 		varNameCheckStartStack.push(0);
 		globalCount = 0;
+		ignoreGlobals = 0;
 	}
 
 	const Object* buildProgram(TokenList& tokenDataList) {
