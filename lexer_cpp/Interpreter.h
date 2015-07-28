@@ -78,7 +78,7 @@ class Interpreter {
 		value->valueType = newType;
 	}
 
-	Value* interpereteStringOperator(const Object *op, Value* v1, Value* v2) {
+	Value* interperetStringOperator(const Object *op, Value* v1, Value* v2) {
 		int l1 = strlen((const char*)allocator.getAddress(v1->intVal));
 		int l2 = strlen((const char*)allocator.getAddress(v2->intVal));
 		uint32_t temp;
@@ -100,7 +100,7 @@ class Interpreter {
 		return v1;
 	}
 
-	Value* interpereteFloatOperator(const Object *op, Value* v1, Value* v2) {
+	Value* interperetFloatOperator(const Object *op, Value* v1, Value* v2) {
 		switch (op->opType) {
 			case Op_addition:
 				v1->floatVal += v2->floatVal;
@@ -152,7 +152,7 @@ class Interpreter {
 		return v1;
 	}
 
-	Value* interpereteIntegerOperator(const Object *op, Value* v1, Value* v2) {
+	Value* interperetIntegerOperator(const Object *op, Value* v1, Value* v2) {
 		switch (op->opType) {
 			case Op_addition:
 				v1->intVal += v2->intVal;
@@ -333,7 +333,7 @@ class Interpreter {
 			case Tt_funccall:
 				v = interpretValue(object->funcCallExtra->name);
 
-				{
+				if(v->valueType == Vt_function){
 					const Object* funcDef = *(const Object**)allocator.getAddress(v->intVal);
 
 					Value* oldVariableStackPointer = variableStackPointer;
@@ -355,10 +355,23 @@ class Interpreter {
 						p = p->nextSibling;
 					}
 					valueStackPointer = variableStackPointer + funcDef->funcDefExtra->parameterCount;
-					interpretFlow(funcDef->funcDefExtra->func_body);
+					int ret = interpretFlow(funcDef->funcDefExtra->func_body) - 3;
 					valueStackPointer -= funcDef->funcDefExtra->parameterCount;
 					variableStackPointer = oldVariableStackPointer;
 
+					v = valueStackPointer;
+					if(ret >= 0){
+						*v = *(valueStackPointer + ret);
+
+						if (isValueDynamic(v)) {
+							v->intVal = allocator.getCopyId(v->intVal);
+						}
+					}else{
+						v->valueType = Vt_integer;
+						v->intVal = 0;
+					}
+				}else{
+					printf("It is not a function");
 				}
 				break;
 			case Tt_operator:
@@ -373,13 +386,13 @@ class Interpreter {
 				}
 				switch (vPrev->valueType) {
 					case Vt_string:
-						v = interpereteStringOperator(object, vPrev2, vPrev);
+						v = interperetStringOperator(object, vPrev2, vPrev);
 						break;
 					case Vt_float:
-						v = interpereteFloatOperator(object, vPrev2, vPrev);
+						v = interperetFloatOperator(object, vPrev2, vPrev);
 						break;
 					case Vt_integer:
-						v = interpereteIntegerOperator(object, vPrev2, vPrev);
+						v = interperetIntegerOperator(object, vPrev2, vPrev);
 						break;
 				}
 
@@ -440,18 +453,24 @@ class Interpreter {
 				result = interpretFlow(object->firstChild);
 				break;
 			case Tt_return:
-				interpretFlow(object->firstChild);
-				return true;
+				return (interpretValue(object->firstChild) - variableStackPointer) + 3;
 				break;
 			case Tt_break:
-				return true;
+				return 2;
 				break;
 			case Tt_whileloop:
 				memset(valueStackPointer, 0, sizeof(Value)*object->whileExtra->parameterCount); // new variables
 
 				valueStackPointer += object->whileExtra->parameterCount;
 				while (valueToBool(interpretValue(object->whileExtra->cond))) {
-					interpretFlow(object->whileExtra->statements);
+					int bodyResult = 0;
+					if(bodyResult = interpretFlow(object->whileExtra->statements) >= 2)
+					{
+						if(bodyResult >= 3){
+							result = bodyResult;
+						}
+						break;
+					}
 				}
 				valueStackPointer -= object->whileExtra->parameterCount;
 				break;
@@ -460,7 +479,15 @@ class Interpreter {
 
 				valueStackPointer += object->doWhileExtra->parameterCount;
 				do {
-					interpretFlow(object->doWhileExtra->statements);
+					int bodyResult = 0;
+
+					if(bodyResult = interpretFlow(object->doWhileExtra->statements) >= 2)
+					{
+						if(bodyResult >= 3){
+							result = bodyResult;
+						}
+						break;
+					}
 				} while (valueToBool(interpretValue(object->doWhileExtra->cond)));
 				valueStackPointer -= object->doWhileExtra->parameterCount;
 				break;
@@ -480,7 +507,13 @@ class Interpreter {
 
 				valueStackPointer += object->forExtra->parameterCount;
 				for (interpretValue(object->forExtra->initPart); valueToBool(interpretValue(object->forExtra->condPart)); interpretValue(object->forExtra->afterPart)) {
-					if (interpretFlow(object->forExtra->statements)) break;
+					int bodyResult = 0;
+					if (bodyResult = interpretFlow(object->forExtra->statements) >= 2){
+						if(bodyResult >= 3){
+							result = bodyResult;
+						}
+						break;
+					}
 				}
 				valueStackPointer -= object->forExtra->parameterCount;
 				break;
@@ -552,7 +585,7 @@ public:
 		}
 	}
 
-	void printStackTop()
+	void printStackTop(const ProgramBuilder& builder)
 	{
 		Value* v = valueStackPointer;
 		switch (v->valueType) {
@@ -566,7 +599,7 @@ public:
 			printf("%s\n", (char*)allocator.getAddress(v->intVal));
 			break;
 		case Vt_function:
-			printf("func\n");
+			builder.printObject(*(const Object**)allocator.getAddress(v->intVal));
 			break;
 		}
 		return;

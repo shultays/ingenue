@@ -28,7 +28,7 @@ int main() {
 		{
 			programs.push_back(program);
 
-			builder.printProgram(program);
+			//builder.printProgram(program);
 
 			const Object* object = program->firstChild;
 			interpreter.interprete(program);
@@ -37,9 +37,11 @@ int main() {
 			{
 				if(object->firstChild && object->firstChild->objectType == Tt_value)
 				{
-					interpreter.printStackTop();
+					interpreter.printStackTop(builder);
 				}
 			}
+			length = 0;
+
 		}
 		else
 		{

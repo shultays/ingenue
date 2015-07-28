@@ -336,7 +336,7 @@ class ProgramBuilder {
 		return firstObject;
 	}
 
-	void printObject(const Object* object, int level = 0) {
+	void printObject(const Object* object, int level = 0) const {
 		const Object* temp;
 		if (object == nullptr) return;
 		for (int i = 0; i < level * 2; i++) printf(" ");
@@ -358,7 +358,7 @@ class ProgramBuilder {
 				printf("%s", object->pChar);
 				break;
 			case Tt_variable:
-				printf("%s (%d)", allNames[object].c_str(), object->intVal);
+				printf("%s (%d)", allNames.at(object).c_str(), object->intVal);
 				break;
 			case Tt_operator:
 			case Tt_singleoperator:
@@ -421,7 +421,7 @@ class ProgramBuilder {
 				printf("func (");
 				temp = object->funcDefExtra->parameters;
 				while (temp) {
-					printf("%s (%d)", allNames[temp].c_str(), temp->intVal);
+					printf("%s (%d)", allNames.at(temp).c_str(), temp->intVal);
 					temp = temp->nextSibling;
 					if (temp) printf(", ");
 				}
@@ -482,7 +482,7 @@ public:
 		return object;
 	}
 
-	void printProgram(const Object* program)
+	void printProgram(const Object* program) const
 	{
 		printObject(program, 1);
 	}
