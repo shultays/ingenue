@@ -516,6 +516,12 @@ public:
 	void deleteProgram(Object* program){
 		deleteObject(program);
 	}
+
+    void clear(){
+        globalCount = 0;
+        varNames.clear();
+        printf("ProgramBuilder alloc = %d\n", allocator.allocated);
+    }
 };
 
 

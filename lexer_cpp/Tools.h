@@ -184,33 +184,33 @@ public:
 
 class MemoryAllocator {
 public:
-	uint32_t allocSize;
+	uint32_t allocated;
 
 	MemoryAllocator() {
-		allocSize = 0;
+		allocated = 0;
 	}
 
 	template<class T>
 	T* getMemory() {
-		allocSize += sizeof(T);
+		allocated += sizeof(T);
 		return new T;
 	}
 
 	template<class T>
 	void deleteMemory(T* object) {
-		allocSize -= sizeof(T);
+		allocated -= sizeof(T);
 		delete object;
 	}
 
 	template<class T>
 	T* getMemory(int count) {
-		allocSize += sizeof(T)* count;
+		allocated += sizeof(T)* count;
 		return new T[count];
 	}
 
 	template<class T>
 	void deleteMemory(T* object, int count) {
-		allocSize -= sizeof(T)* count;
+		allocated -= sizeof(T)* count;
 		delete[] object;
 	}
 

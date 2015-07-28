@@ -614,11 +614,8 @@ public:
 			v++;
 		}
 		valueStackPointer = variableStackPointer = variableGlobalPointer;
+        printf("Interpreter alloc = %d\n", allocator.allocated);
 	}
-
-
-
-
 };
 
 #endif

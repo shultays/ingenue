@@ -68,6 +68,7 @@ int main() {
 	for(unsigned i=0; i<programs.size(); i++){
 		builder.deleteProgram(programs[i]);
 	}
+    builder.clear();
 	interpreter.clear();
 	return 0;
 }

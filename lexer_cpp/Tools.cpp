@@ -88,10 +88,18 @@ bool isOperatorUnion(OperatorType op) {
 
 int floatToStr(float num, char* str, int max)
 {
+#ifdef _WIN32
 	return sprintf_s(str, max, "%f", num);
+#else
+	return snprintf(str, max, "%f", num);
+#endif
 }
 
 int intToStr(int num, char* str, int max)
 {
+#ifdef _WIN32
 	return sprintf_s(str, max, "%d", num);
+#else
+	return snprintf(str, max, "%d", num);
+#endif
 }
