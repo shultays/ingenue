@@ -450,30 +450,44 @@ class ProgramBuilder {
 		if (object == nullptr) return;
 
 		switch (object->objectType) {
-			case Tt_whileloop:
-				allocator.deleteMemory<WhileExtra>(object->whileExtra);
-				break;
-			case Tt_dowhileloop:
-				allocator.deleteMemory<DoWhileExtra>(object->doWhileExtra);
-				break;
-			case Tt_ifcond:
-				allocator.deleteMemory<IfExtra>(object->ifExtra);
-				break;
-			case Tt_forloop:
-				allocator.deleteMemory<ForExtra>(object->forExtra);
-				break;
-			case Tt_func_def:
-				allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
-				break;
-			case Tt_func_call:
-				allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
-				break;
-			case Tt_string:
-				allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
-				break;
+		case Tt_whileloop:
+			deleteObject(object->whileExtra->cond);
+			deleteObject(object->whileExtra->statements);
+			allocator.deleteMemory<WhileExtra>(object->whileExtra);
+			break;
+		case Tt_dowhileloop:
+			deleteObject(object->doWhileExtra->cond);
+			deleteObject(object->doWhileExtra->statements);
+			allocator.deleteMemory<DoWhileExtra>(object->doWhileExtra);
+			break;
+		case Tt_ifcond:
+			deleteObject(object->ifExtra->cond);
+			deleteObject(object->ifExtra->ifPart);
+			deleteObject(object->ifExtra->elsePart);
+			allocator.deleteMemory<IfExtra>(object->ifExtra);
+			break;
+		case Tt_forloop:
+			deleteObject(object->forExtra->initPart);
+			deleteObject(object->forExtra->condPart);
+			deleteObject(object->forExtra->afterPart);
+			deleteObject(object->forExtra->statements);
+			allocator.deleteMemory<ForExtra>(object->forExtra);
+			break;
+		case Tt_func_def:
+			deleteObject(object->funcDefExtra->parameters);
+			deleteObject(object->funcDefExtra->func_body);
+			allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
+			break;
+		case Tt_func_call:
+			deleteObject(object->funcCallExtra->values);
+			allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
+			break;
+		case Tt_string:
+			allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
+			break;
 
-			default:
-				break;
+		default:
+			break;
 		}
 
 		deleteObject(object->nextSibling);
@@ -488,7 +502,7 @@ public:
 		ignoreGlobals = 0;
 	}
 
-	const Object* buildProgram(TokenList& tokenDataList) {
+	Object* buildProgram(TokenList& tokenDataList) {
 		Object *object = buildSubProgram(tokenDataList);
 		return object;
 	}

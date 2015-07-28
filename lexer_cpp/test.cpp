@@ -7,7 +7,7 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	char str[1024] = "a;c;b = func(a){a=3;c=5;};";
+	char str[1024] = "a;c;b = func(a){a=3;c=5;};if(a){b=3;}for(a=0;a<10;a++){b=3;}while(a>3)a--;do{a++;}while(a<10);";
 	//str[0] = '\0';
 	//str = "a=1;";
 
@@ -17,12 +17,12 @@ int main() {
 	ProgramBuilder builder;
 
 	int length = 0;
-	std::vector<const Object*> programs;
+	std::vector<Object*> programs;
 	do 
 	{
 		TokenList list;
 		tokenizer.tokenize(str, list);
-		const Object* program = builder.buildProgram(list);
+		Object* program = builder.buildProgram(list);
 
 		if(program)
 		{
@@ -63,7 +63,11 @@ int main() {
 			printf(">>>> ");
 		}
 		fgets(str + length, sizeof(str), stdin);
-	} while (true);
+	} while (feof(stdin) == false);
 	
+	for(unsigned i=0; i<programs.size(); i++){
+		builder.deleteProgram(programs[i]);
+	}
+	interpreter.clear();
 	return 0;
 }

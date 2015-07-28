@@ -603,6 +603,20 @@ public:
 		return;
 	}
 
+	void clear()
+	{
+		Value*v = variableGlobalPointer;
+		while (v<valueStackPointer)
+		{
+			if (isValueDynamic(v)) {
+				allocator.freeId(v->intVal);
+			}
+			v++;
+		}
+		valueStackPointer = variableStackPointer = variableGlobalPointer;
+	}
+
+
 
 
 };
