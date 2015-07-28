@@ -84,3 +84,13 @@ const char* getOperatorString(int type) {
 bool isOperatorUnion(OperatorType op) {
 	return op >= Op_inc;
 }
+
+int floatToStr(float num, char* str, int max)
+{
+	return sprintf_s(str, max, "%f", num);
+}
+
+int intToStr(int num, char* str, int max)
+{
+	return sprintf_s(str, max, "%d", num);
+}

@@ -7,30 +7,61 @@ int main() {
 	buildTools();
 	Tokenizer tokenizer;
 
-	const char* str = "a;b=func(c){z=55;a=z+c;};b(12);";
+	char str[1024] = "a=3;if(a==3){z=4;}";
+	str[0] = '\0';
 	//str = "a=1;";
-	TokenList list;
-	tokenizer.tokenize(str, list);
 
-	tokenizer.printList(list);
-
-
-	ProgramBuilder builder;
-	Program program = builder.buildProgram(list);
-
-	builder.printProgram(program);
-
+	//tokenizer.printList(list);
 
 	Interpreter interpreter;
+	ProgramBuilder builder;
 
-	interpreter.interprete(program);
-	interpreter.printVal(program, "a");
-	interpreter.printVal(program, "b");
-	interpreter.printVal(program, "c");
-	interpreter.printVal(program, "d");
-	interpreter.printVal(program, "e");
-	interpreter.printVal(program, "f");
-	builder.deleteProgram(program);
-	system("pause");
+	int length = 0;
+	std::vector<const Object*> programs;
+	do 
+	{
+		TokenList list;
+		tokenizer.tokenize(str, list);
+		const Object* program = builder.buildProgram(list);
+
+		if(program)
+		{
+			programs.push_back(program);
+
+			builder.printProgram(program);
+
+			const Object* object = program->firstChild;
+			interpreter.interprete(program);
+
+			if(object->nextSibling == nullptr)
+			{
+				if(object->firstChild && object->firstChild->objectType == Tt_value)
+				{
+					interpreter.printStackTop();
+				}
+			}
+		}
+		else
+		{
+			if(str[length] == '\0' || (str[length] == '\n' && str[length+1] == '\0')){
+				length = 0;
+			} else{
+				length = strlen(str);
+				str[length] = ' ';
+				str[length+1] = '\0';
+				length++;
+			}
+		}
+		if(length == 0)
+		{
+			printf(">> ");
+		}
+		else
+		{
+			printf(">>>> ");
+		}
+		fgets(str + length, sizeof(str), stdin);
+	} while (true);
+	
 	return 0;
 }

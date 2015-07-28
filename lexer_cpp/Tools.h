@@ -181,12 +181,6 @@ public:
 	};
 };
 
-class Program {
-public:
-	Object *root;
-	std::vector<std::string> globals;
-};
-
 class MemoryAllocator {
 public:
 	uint32_t allocSize;
@@ -337,5 +331,8 @@ public:
 		return (void*)(buff + id);
 	}
 };
+
+int floatToStr(float num, char* str, int max);
+int intToStr(int num, char* str, int max);
 
 #endif

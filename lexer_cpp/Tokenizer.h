@@ -102,7 +102,7 @@ class Tokenizer {
 		list.insert(token);
 	}
 
-	template<typename T, typename... Args>
+	template<typename T, typename ... Args>
 	void buildList(TokenDefList& list, T token, Args... args) {
 		list.insert(token);
 		buildList(list, args...);

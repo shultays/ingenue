@@ -50,7 +50,7 @@ class Interpreter {
 						value->floatVal = (float)value->intVal;
 						break;
 					case Vt_string:
-						l = snprintf(temp, sizeof(temp), "%d", value->intVal);
+						l = intToStr(value->intVal, temp, sizeof(temp));
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
 						break;
@@ -62,7 +62,7 @@ class Interpreter {
 						value->intVal = (int32_t)value->floatVal;
 						break;
 					case Vt_string:
-						l = snprintf(temp, sizeof(temp), "%f", value->floatVal);
+						l = floatToStr(value->floatVal, temp, sizeof(temp));
 						value->intVal = allocator.allocId(l + 1);
 						memcpy(allocator.getAddress(value->intVal), temp, l + 1);
 						break;
@@ -78,7 +78,7 @@ class Interpreter {
 		value->valueType = newType;
 	}
 
-	Value* interpereteStringOperator(Object *op, Value* v1, Value* v2) {
+	Value* interpereteStringOperator(const Object *op, Value* v1, Value* v2) {
 		int l1 = strlen((const char*)allocator.getAddress(v1->intVal));
 		int l2 = strlen((const char*)allocator.getAddress(v2->intVal));
 		uint32_t temp;
@@ -100,7 +100,7 @@ class Interpreter {
 		return v1;
 	}
 
-	Value* interpereteFloatOperator(Object *op, Value* v1, Value* v2) {
+	Value* interpereteFloatOperator(const Object *op, Value* v1, Value* v2) {
 		switch (op->opType) {
 			case Op_addition:
 				v1->floatVal += v2->floatVal;
@@ -152,7 +152,7 @@ class Interpreter {
 		return v1;
 	}
 
-	Value* interpereteIntegerOperator(Object *op, Value* v1, Value* v2) {
+	Value* interpereteIntegerOperator(const Object *op, Value* v1, Value* v2) {
 		switch (op->opType) {
 			case Op_addition:
 				v1->intVal += v2->intVal;
@@ -203,11 +203,11 @@ class Interpreter {
 
 
 
-	Value* interpretValue(Object *object) {
+	Value* interpretValue(const Object *object) {
 		Value *v = nullptr, *vPrev = nullptr, *vPrev2 = nullptr;
 		if (object == nullptr) return nullptr;
 		Value* oldValueStackPointer = valueStackPointer;
-		Object** temp;
+		const Object** temp;
 		Value* variable;
 		switch (object->objectType) {
 			default:
@@ -327,20 +327,20 @@ class Interpreter {
 				v = valueStackPointer++;
 				v->valueType = Vt_function;
 				v->intVal = allocator.allocId<Object*>();
-				temp = (Object**)allocator.getAddress(v->intVal);
+				temp = (const Object**)allocator.getAddress(v->intVal);
 				*temp = object;
 				break;
 			case Tt_funccall:
 				v = interpretValue(object->funcCallExtra->name);
 
 				{
-					Object* funcDef = *(Object**)allocator.getAddress(v->intVal);
+					const Object* funcDef = *(const Object**)allocator.getAddress(v->intVal);
 
 					Value* oldVariableStackPointer = variableStackPointer;
 					variableStackPointer = valueStackPointer;
 					memset(valueStackPointer, 0, sizeof(Value)*funcDef->funcDefExtra->parameterCount);
 
-					Object* p = object->funcCallExtra->values;
+					const Object* p = object->funcCallExtra->values;
 					while (p) {
 						if (p->objectType == Tt_comma) {
 							p = p->nextSibling;
@@ -415,7 +415,7 @@ class Interpreter {
 		return 0;
 	}
 
-	int interpretFlow(Object *object, bool goNext = true) {
+	int interpretFlow(const Object *object, bool goNext = true) {
 		if (object == nullptr) return 0;
 
 		int result = 0;
@@ -424,12 +424,17 @@ class Interpreter {
 				result = interpretFlow(object->firstChild);
 				break;
 			case Tt_multiple_statement:
-			case Tt_program:
 				memset(valueStackPointer, 0, sizeof(Value)*object->intVal); // new variables
 
 				valueStackPointer += object->intVal;
 				result = interpretFlow(object->firstChild);
 				valueStackPointer -= object->intVal;
+				break;
+			case Tt_program:
+				memset(valueStackPointer, 0, sizeof(Value)*object->intVal); // new variables
+
+				valueStackPointer += object->intVal;
+				result = interpretFlow(object->firstChild);
 				break;
 			case Tt_statement:
 				result = interpretFlow(object->firstChild);
@@ -510,16 +515,13 @@ public:
 		delete allData;
 	}
 
-	void interprete(const Program& program) {
-		valueStackPointer = (Value*)stack;
-		variableStackPointer = (Value*)stack;
-		valueStackPointer = variableStackPointer;
-		interpretFlow(program.root);
+	void interprete(const Object* program) {
+		interpretFlow(program);
 	}
 
-	void printVal(const Program& program, const std::string& varName) {
-		for (unsigned i = 0; i < program.globals.size(); i++) {
-			if (program.globals[i] == varName) {
+	void printVal(const ProgramBuilder& builder, const std::string& varName) {
+		for (int i = 0; i < builder.globalCount; i++) {
+			if (builder.varNames[i] == varName) {
 				Value* v = &variableStackPointer[i];
 				switch (v->valueType) {
 					case Vt_integer:
@@ -549,6 +551,27 @@ public:
 			return &variableGlobalPointer[-1 - intVal];
 		}
 	}
+
+	void printStackTop()
+	{
+		Value* v = valueStackPointer;
+		switch (v->valueType) {
+		case Vt_integer:
+			printf("%d\n", v->intVal);
+			break;
+		case Vt_float:
+			printf("%f\n", v->floatVal);
+			break;
+		case Vt_string:
+			printf("%s\n", (char*)allocator.getAddress(v->intVal));
+			break;
+		case Vt_function:
+			printf("func\n");
+			break;
+		}
+		return;
+	}
+
 
 
 };

@@ -35,12 +35,14 @@ int operatorPrecedences[] = {
 };
 
 class ProgramBuilder {
+	friend class Interpreter;
+
 	MemoryAllocator allocator;
 
 	std::vector<std::string> varNames;
-	std::vector<std::string> globalNames;
+	int globalCount;
 
-	std::map < Object*, std::string> allNames; // debug
+	std::map < const Object*, std::string> allNames; // debug
 
 	std::stack<uint32_t> scopeSizeStack;
 	std::stack<uint32_t> varNameCheckStartStack;
@@ -52,12 +54,13 @@ class ProgramBuilder {
 			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
 		}
 
-		for (unsigned i = 0; i < globalNames.size(); i++) {
-			if (globalNames[i] == varName) return -((int)i) - 1;
+		for (int i = 0; i < globalCount; i++) {
+			if (varNames[i] == varName) return -((int)i) - 1;
 		}
+
 		varNames.push_back(varName);
 		if (scopeSizeStack.size() == 1) {
-			globalNames.push_back(varName);
+			globalCount++;
 		}
 
 		return varNames.size() - 1 - varNameCheckStartStack.top();
@@ -247,10 +250,12 @@ class ProgramBuilder {
 				configureUnaryObject(object);
 				break;
 			case Tt_multiple_statement:
-			case Tt_program:
 				object->intVal = varNames.size() - scopeSizeStack.top();
 				varNames.resize(scopeSizeStack.top());
 				scopeSizeStack.pop();
+				break;
+			case Tt_program:
+				object->intVal = varNames.size() - scopeSizeStack.top();
 				break;
 			default:
 				break;
@@ -331,8 +336,8 @@ class ProgramBuilder {
 		return firstObject;
 	}
 
-	void printObject(Object* object, int level = 0) {
-		Object* temp;
+	void printObject(const Object* object, int level = 0) {
+		const Object* temp;
 		if (object == nullptr) return;
 		for (int i = 0; i < level * 2; i++) printf(" ");
 		bool moveVariableStack = false;
@@ -469,26 +474,22 @@ class ProgramBuilder {
 public:
 	ProgramBuilder() {
 		varNameCheckStartStack.push(0);
+		globalCount = 0;
 	}
 
-	Program buildProgram(TokenList& tokenDataList) {
-		allNames.clear();
+	const Object* buildProgram(TokenList& tokenDataList) {
 		Object *object = buildSubProgram(tokenDataList);
-		Program program;
-		program.root = object;
-		program.globals = globalNames;
-		varNames.clear();
-		globalNames.clear();
-		return program;
+		return object;
 	}
 
-	void printProgram(const Program& program) {
-		printObject(program.root, 0);
+	void printProgram(const Object* program)
+	{
+		printObject(program, 1);
 	}
 
-	void deleteProgram(Program program) {
-		deleteObject(program.root);
-		program.globals.clear();
+
+	void deleteProgram(Object* program){
+		deleteObject(program);
 	}
 };
 
