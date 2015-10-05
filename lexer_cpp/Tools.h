@@ -83,6 +83,15 @@ enum OperatorType {
 };
 
 
+enum DefaltFunction {
+	Df_print,
+	Df_scan,
+	Df_assert,
+
+	Df_count,
+	Df_invalid
+};
+
 bool isOperatorUnion(OperatorType op);
 
 class Token;
@@ -219,6 +228,9 @@ public:
 void buildTools();
 
 const char* getTokenName(TokenType type);
+const char* getDefaultFunctionName(DefaltFunction f);
+DefaltFunction getDefaultFunctionEnum(const char* name);
+
 const char* getOperatorString(int type);
 
 

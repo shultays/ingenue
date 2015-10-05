@@ -7,7 +7,7 @@
 #include "Tools.h"
 
 
-
+const int defaultFuncNameVariableIndex = 256*256*256;
 int operatorPrecedences[] = {
 	-1,
 	1, //+
@@ -50,6 +50,11 @@ class ProgramBuilder {
 	int ignoreGlobals;
 
 	int getVariableIndex(std::string varName, Object* object) {
+		int funcNameIndex = getDefaultFunctionEnum(varName.c_str());
+		if(funcNameIndex != Df_invalid) {
+			return defaultFuncNameVariableIndex + funcNameIndex;
+		}
+
 		allNames[object] = varName;
 		for (unsigned i = varNameCheckStartStack.top(); i < varNames.size(); i++) {
 			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
@@ -186,8 +191,19 @@ class ProgramBuilder {
 		object->funcCallExtra = allocator.getMemory<FuncCallExtra>();
 		object->funcCallExtra->name = object->firstChild;
 		object->funcCallExtra->name->nextSibling = nullptr;
-		object->funcCallExtra->values = temp;
-		object->firstChild = nullptr;
+		object->funcCallExtra->values = temp->firstChild;
+		Object** cursor = &object->funcCallExtra->values;
+		while(*cursor)
+		{
+			if((*cursor)->objectType == Tt_comma)
+			{
+				*cursor = (*cursor)->nextSibling;
+			}
+			else
+			{
+				cursor = &(*cursor)->nextSibling;
+			}
+		}
 	}
 
 	void configureUnaryObject(Object *object) {

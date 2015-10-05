@@ -6,8 +6,8 @@
 int main() {
 	buildTools();
 	Tokenizer tokenizer;
-
-	char str[1024] = "a;c;b = func(a){a=3;c=5;};if(a){b=3;}for(a=0;a<10;a++){b=3;}while(a>3)a--;do{a++;}while(a<10);";
+	char str[1024] = "p = func(a, b){ return a + b;};";
+	//char str[1024] = "a;c;b = func(a){a=3;c=5;};if(a){b=3;}for(a=0;a<10;a++){b=3;}while(a>3)a--;do{a++;}while(a<10);";
 	//str[0] = '\0';
 	//str = "a=1;";
 

@@ -25,9 +25,14 @@ const char* operatorStrings[] = {
 
 
 const char* tokenNames[Tt_count];
+const char* defaultFuncNames[Df_count];
 
 void buildTools() {
 	assert(sizeof(float) == 4);
+
+	defaultFuncNames[Df_print] = "print";
+	defaultFuncNames[Df_scan] = "print";
+	defaultFuncNames[Df_assert] = "print";
 
 	tokenNames[Tt_whitespace] = "whitespace";
 	tokenNames[Tt_comment_single] = "comment_single";
@@ -76,6 +81,20 @@ void buildTools() {
 
 const char* getTokenName(TokenType type) {
 	return tokenNames[type];
+}
+
+const char* getDefaultFunctionName(DefaltFunction f){
+	return defaultFuncNames[f];
+}
+
+DefaltFunction getDefaultFunctionEnum(const char* name){
+	for(int i=0; i<Df_count; i++){
+		if(strncmp(defaultFuncNames[i], name, strlen(defaultFuncNames[i])) == 0)
+		{
+			return (DefaltFunction)i;
+		}
+	}
+	return Df_invalid;
 }
 
 const char* getOperatorString(int type) {
