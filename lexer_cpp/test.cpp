@@ -11,7 +11,6 @@ int main() {
 	//str[0] = '\0';
 	//str = "a=1;";
 
-	//tokenizer.printList(list);
 
 	Interpreter interpreter;
 	ProgramBuilder builder;
@@ -22,6 +21,7 @@ int main() {
 	{
 		TokenList list;
 		tokenizer.tokenize(str, list);
+		//tokenizer.printList(list);
 		Object* program = builder.buildProgram(list);
 
 		if(program)

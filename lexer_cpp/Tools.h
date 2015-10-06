@@ -148,8 +148,8 @@ typedef struct {
 typedef struct {
 	Object *parameters;
 	Object *func_body;
-
-	uint32_t parameterCount;
+	DefaltFunction default_function;
+	int32_t parameterCount;
 }FuncDefExtra;
 
 
@@ -228,8 +228,8 @@ public:
 void buildTools();
 
 const char* getTokenName(TokenType type);
-const char* getDefaultFunctionName(DefaltFunction f);
-DefaltFunction getDefaultFunctionEnum(const char* name);
+const char* getDefaultFunctionName(int f);
+int getDefaultFunctionEnum(const char* name);
 
 const char* getOperatorString(int type);
 

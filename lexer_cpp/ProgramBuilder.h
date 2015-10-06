@@ -50,11 +50,6 @@ class ProgramBuilder {
 	int ignoreGlobals;
 
 	int getVariableIndex(std::string varName, Object* object) {
-		int funcNameIndex = getDefaultFunctionEnum(varName.c_str());
-		if(funcNameIndex != Df_invalid) {
-			return defaultFuncNameVariableIndex + funcNameIndex;
-		}
-
 		allNames[object] = varName;
 		for (unsigned i = varNameCheckStartStack.top(); i < varNames.size(); i++) {
 			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
@@ -68,7 +63,7 @@ class ProgramBuilder {
 		}
 
 		varNames.push_back(varName);
-		if (scopeSizeStack.size() == 1) {
+		if (scopeSizeStack.size() <= 1) {
 			globalCount++;
 		}
 
@@ -190,20 +185,24 @@ class ProgramBuilder {
 		Object *temp = object->firstChild->nextSibling;
 		object->funcCallExtra = allocator.getMemory<FuncCallExtra>();
 		object->funcCallExtra->name = object->firstChild;
+		object->funcCallExtra->values = object->firstChild->nextSibling;
 		object->funcCallExtra->name->nextSibling = nullptr;
-		object->funcCallExtra->values = temp->firstChild;
 		Object** cursor = &object->funcCallExtra->values;
+		temp = *cursor;
 		while(*cursor)
 		{
 			if((*cursor)->objectType == Tt_comma)
 			{
+				Object* prev = *cursor;
 				*cursor = (*cursor)->nextSibling;
+				allocator.deleteMemory<Object>(prev);
 			}
 			else
 			{
 				cursor = &(*cursor)->nextSibling;
 			}
 		}
+		object->funcCallExtra->values = temp;
 	}
 
 	void configureUnaryObject(Object *object) {
@@ -343,6 +342,10 @@ class ProgramBuilder {
 		Object *firstObject = nullptr;
 		for (unsigned i = 0; i < tokenDataList.size(); i++) {
 			Object* object = buildObject(tokenDataList[i]);
+			if(object->objectType == Tt_func_def)
+			{
+				int a = 5;
+			}
 			if (tokenDataList[i].children.size() > 0) {
 				object->firstChild = buildSubProgram(tokenDataList[i].children);
 			}
@@ -454,6 +457,13 @@ class ProgramBuilder {
 				printf(")\n");
 				printObject(object->funcDefExtra->func_body, level + 1);
 				break;
+			case Tt_func_call:
+				printf("func_call (\n");
+				temp = object->funcCallExtra->values;
+				printObject(object->funcCallExtra->values, level+1);
+				for (int i = 0; i < level * 2; i++) printf(" ");
+				printf(")\n");
+				break;
 			default:
 				printf("%s", getTokenName(object->objectType));
 		}
@@ -516,6 +526,8 @@ public:
 		varNameCheckStartStack.push(0);
 		globalCount = 0;
 		ignoreGlobals = 0;
+
+		buildStdlib();
 	}
 
 	Object* buildProgram(TokenList& tokenDataList) {
@@ -534,10 +546,18 @@ public:
 	}
 
     void clear(){
-        globalCount = 0;
-        varNames.clear();
-        printf("ProgramBuilder alloc = %d\n", allocator.allocated);
+		globalCount = 0;
+		varNames.clear();
+		printf("ProgramBuilder alloc = %d\n", allocator.allocated);
     }
+
+	void buildStdlib(){
+		for(int i=0; i<Df_count; i++){
+			int index = getVariableIndex(getDefaultFunctionName(i), nullptr);
+		}
+	}
+
+
 };
 
 
