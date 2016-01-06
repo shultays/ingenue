@@ -35,6 +35,8 @@ class Interpreter {
 	char *stack;
 	char *heap;
 
+	bool terminate;
+	bool hasAssert;
 	Value *valueStackPointer;
 	Value *variableStackPointer;
 	Value *variableGlobalPointer;
@@ -201,42 +203,75 @@ class Interpreter {
 		return v1;
 	}
 
-	int callDefaultFunction(DefaltFunction f, FuncCallExtra* extra){
-		switch (f)
-		{
-		case Df_print:
-			{
-				for(Value* v=variableStackPointer; v<valueStackPointer; v++)
-				{
+	int callDefaultFunction(DefaltFunction f, FuncCallExtra* extra) {
+		switch (f) {
+			case Df_print:
+				for (Value* v = variableStackPointer; v < valueStackPointer; v++) {
 					switch (v->valueType) {
-					case Vt_integer:
-						printf("%d", v->intVal);
-						break;
-					case Vt_float:
-						printf("%f", v->floatVal);
-						break;
-					case Vt_string:
-						printf("%s", (char*)allocator.getAddress(v->intVal));
-						break;
-					case Vt_function:
-						printf("<func>");
-						break;
+						case Vt_integer:
+							printf("%d", v->intVal);
+							break;
+						case Vt_float:
+							printf("%f", v->floatVal);
+							break;
+						case Vt_string:
+							printf("%s", (char*)allocator.getAddress(v->intVal));
+							break;
+						case Vt_function:
+							printf("<func>");
+							break;
 					}
 				}
+				break;
+			case Df_scan:
+			{
+							char buff[128];
+							fgets(buff, sizeof(buff), stdin);
+							char *temp;
+							int intVal = strtol(buff, &temp, 0);
+							if (temp[0] == '\0' || temp[0] == '\n') {
+								valueStackPointer->valueType = Vt_integer;
+								valueStackPointer->intVal = intVal;
+								return 0;
+							}
+							double doubleVal = strtod(buff, &temp);
+							if (temp[0] == '\0' || temp[0] == '\n') {
+								valueStackPointer->valueType = Vt_float;
+								valueStackPointer->floatVal = (float)doubleVal;
+								return 0;
+							}
+							int val = strlen(buff);
+							buff[val - 1] = '\0';
+							valueStackPointer->valueType = Vt_string;
+							valueStackPointer->intVal = allocator.allocId(val);
+							memcpy(allocator.getAddress(valueStackPointer->intVal), buff, val);
+							return 0;
 			}
-			break;
-		case Df_scan:
-			break;
-		case Df_assert:
-			break;
-		case Df_count:
-			break;
-		case Df_invalid:
-			break;
-		default:
-			break;
+				break;
+			case Df_assert:
+			{
+							  for (Value* v = variableStackPointer; v < valueStackPointer; v++) {
+								  switch (v->valueType) {
+									  case Vt_integer:
+										  if (v->intVal == 0) {
+											  hasAssert = true;
+										  }
+										  break;
+									  case Vt_float:
+										  if (v->floatVal == 0.0f) {
+											  hasAssert = true;
+										  }
+										  break;
+								  }
+							  }
+			}
+				break;
+			case Df_exit:
+				terminate = true;
+			default:
+				break;
 		}
-		return -2;
+		return -1;
 	}
 
 	Value* interpretValue(const Object *object, bool single = false) {
@@ -365,54 +400,58 @@ class Interpreter {
 				*temp = object;
 				break;
 			case Tt_func_call:
-				{
-					v = interpretValue(object->funcCallExtra->name);
-					if(v->valueType == Vt_function){
-						const Object* funcDef = *(const Object**)allocator.getAddress(v->intVal);
+			{
+								 v = interpretValue(object->funcCallExtra->name);
+								 if (v->valueType == Vt_function) {
+									 const Object* funcDef = *(const Object**)allocator.getAddress(v->intVal);
 
-						Value* oldVariableStackPointer = variableStackPointer;
-						variableStackPointer = valueStackPointer;
-						if(funcDef->funcDefExtra->parameterCount != -1){
-							memset(valueStackPointer, 0, sizeof(Value)*funcDef->funcDefExtra->parameterCount);
-						}
+									 Value* oldVariableStackPointer = variableStackPointer;
+									 variableStackPointer = valueStackPointer;
+									 if (funcDef->funcDefExtra->parameterCount != -1) {
+										 memset(valueStackPointer, 0, sizeof(Value)*funcDef->funcDefExtra->parameterCount);
+									 }
 
-						const Object* p = object->funcCallExtra->values;
-						while (p) {
-							if (funcDef->funcDefExtra->parameterCount != -1 && valueStackPointer >= variableStackPointer + funcDef->funcDefExtra->parameterCount) {
-								printf("Too many parameters for function\n");
-								break;
-							}
-							*valueStackPointer = *interpretValue(p, true);
-							valueStackPointer++;
-							p = p->nextSibling;
-						}
-						if(funcDef->funcDefExtra->parameterCount != -1){
-							valueStackPointer = variableStackPointer + funcDef->funcDefExtra->parameterCount;
-						}
-						int ret;
-						if(funcDef->funcDefExtra->func_body == nullptr){
-							ret = callDefaultFunction(funcDef->funcDefExtra->default_function, funcDef->funcCallExtra);
-						}else{
-							ret = interpretFlow(funcDef->funcDefExtra->func_body) - 3;
-						}
-						valueStackPointer -= funcDef->funcDefExtra->parameterCount;
-						variableStackPointer = oldVariableStackPointer;
+									 const Object* p = object->funcCallExtra->values;
+									 while (p) {
+										 if (funcDef->funcDefExtra->parameterCount != -1 && valueStackPointer >= variableStackPointer + funcDef->funcDefExtra->parameterCount) {
+											 printf("Too many parameters for function\n");
+											 break;
+										 }
+										 *valueStackPointer = *interpretValue(p, true);
+										 valueStackPointer++;
+										 p = p->nextSibling;
+									 }
+									 if (funcDef->funcDefExtra->parameterCount != -1) {
+										 valueStackPointer = variableStackPointer + funcDef->funcDefExtra->parameterCount;
+									 }
+									 int ret;
+									 if (funcDef->funcDefExtra->funcBody == nullptr) {
+										 ret = callDefaultFunction(funcDef->funcDefExtra->defaultFunction, funcDef->funcCallExtra);
+									 } else {
+										 ret = interpretFlow(funcDef->funcDefExtra->funcBody) - 3;
+									 }
+									 if (funcDef->funcDefExtra->parameterCount != -1) {
+										 valueStackPointer -= funcDef->funcDefExtra->parameterCount;
+									 }
+									 variableStackPointer = oldVariableStackPointer;
 
-						v = valueStackPointer;
-						if(ret >= 0){
-							*v = *(valueStackPointer + ret);
-							if (isValueDynamic(v)) {
-								v->intVal = allocator.getCopyId(v->intVal);
-							}
-						}else{
-							v->valueType = Vt_integer;
-							v->intVal = 0;
-						}
-					}else{
-						printf("It is not a function");
-					}
+									 v = valueStackPointer;
+									 if (ret >= 0) {
+										 if (ret != 0) {
+											 *v = *(valueStackPointer + ret);
+											 if (isValueDynamic(v)) {
+												 v->intVal = allocator.getCopyId(v->intVal);
+											 }
+										 }
+									 } else {
+										 v->valueType = Vt_integer;
+										 v->intVal = 0;
+									 }
+								 } else {
+									 printf("It is not a function");
+								 }
 
-				}
+			}
 
 				break;
 			case Tt_operator:
@@ -492,6 +531,10 @@ class Interpreter {
 				break;
 			case Tt_statement:
 				result = interpretFlow(object->firstChild);
+				if (hasAssert) {
+					printf("assertion failed : %.*s\n", object->tokenPtr->tokenLength, object->tokenPtr->tokenBegin);
+					hasAssert = false;
+				}
 				break;
 			case Tt_return:
 				return (interpretValue(object->firstChild) - variableStackPointer) + 3;
@@ -505,9 +548,8 @@ class Interpreter {
 				valueStackPointer += object->whileExtra->parameterCount;
 				while (valueToBool(interpretValue(object->whileExtra->cond))) {
 					int bodyResult = 0;
-					if(bodyResult = interpretFlow(object->whileExtra->statements) >= 2)
-					{
-						if(bodyResult >= 3){
+					if (bodyResult = interpretFlow(object->whileExtra->statements) >= 2) {
+						if (bodyResult >= 3) {
 							result = bodyResult;
 						}
 						break;
@@ -522,9 +564,8 @@ class Interpreter {
 				do {
 					int bodyResult = 0;
 
-					if(bodyResult = interpretFlow(object->doWhileExtra->statements) >= 2)
-					{
-						if(bodyResult >= 3){
+					if (bodyResult = interpretFlow(object->doWhileExtra->statements) >= 2) {
+						if (bodyResult >= 3) {
 							result = bodyResult;
 						}
 						break;
@@ -549,8 +590,8 @@ class Interpreter {
 				valueStackPointer += object->forExtra->parameterCount;
 				for (interpretValue(object->forExtra->initPart); valueToBool(interpretValue(object->forExtra->condPart)); interpretValue(object->forExtra->afterPart)) {
 					int bodyResult = 0;
-					if (bodyResult = interpretFlow(object->forExtra->statements) >= 2){
-						if(bodyResult >= 3){
+					if (bodyResult = interpretFlow(object->forExtra->statements) >= 2) {
+						if (bodyResult >= 3) {
 							result = bodyResult;
 						}
 						break;
@@ -566,6 +607,7 @@ class Interpreter {
 				break;
 		}
 		if (result) return result;
+		if (terminate) return -1;
 		if (goNext) {
 			return interpretFlow(object->nextSibling);
 		}
@@ -575,6 +617,8 @@ class Interpreter {
 
 public:
 	Interpreter() {
+		terminate = false;
+		hasAssert = false;
 		allData = new char[STACK_SIZE + HEAP_SIZE];
 		stack = allData;
 		heap = allData + STACK_SIZE;
@@ -590,8 +634,9 @@ public:
 		delete allData;
 	}
 
-	void interprete(const Object* program) {
+	bool interprete(const Object* program) {
 		interpretFlow(program);
+		return terminate;
 	}
 
 	void printVal(const ProgramBuilder& builder, const std::string& varName) {
@@ -627,43 +672,40 @@ public:
 		}
 	}
 
-	void printStackTop(const ProgramBuilder& builder)
-	{
+	void printStackTop(const ProgramBuilder& builder) {
 		Value* v = valueStackPointer;
 		switch (v->valueType) {
-		case Vt_integer:
-			printf("%d\n", v->intVal);
-			break;
-		case Vt_float:
-			printf("%f\n", v->floatVal);
-			break;
-		case Vt_string:
-			printf("%s\n", (char*)allocator.getAddress(v->intVal));
-			break;
-		case Vt_function:
-			builder.printObject(*(const Object**)allocator.getAddress(v->intVal));
-			break;
+			case Vt_integer:
+				printf("%d\n", v->intVal);
+				break;
+			case Vt_float:
+				printf("%f\n", v->floatVal);
+				break;
+			case Vt_string:
+				printf("%s\n", (char*)allocator.getAddress(v->intVal));
+				break;
+			case Vt_function:
+				builder.printObject(*(const Object**)allocator.getAddress(v->intVal));
+				break;
 		}
 		return;
 	}
 
-	void clear()
-	{
+	void clear() {
 		Value*v = variableGlobalPointer;
-		while (v<valueStackPointer)
-		{
+		while (v < valueStackPointer) {
 			if (isValueDynamic(v)) {
 				allocator.freeId(v->intVal);
 			}
 			v++;
 		}
 		valueStackPointer = variableStackPointer = variableGlobalPointer;
-        printf("Interpreter alloc = %d\n", allocator.allocated);
+		printf("Interpreter alloc = %d\n", allocator.allocated);
 	}
 
 
-	void buildStdlib(){
-		for(int i=0; i<Df_count; i++){
+	void buildStdlib() {
+		for (int i = 0; i < Df_count; i++) {
 			variableGlobalPointer[i].valueType = Vt_function;
 			variableGlobalPointer[i].intVal = allocator.allocId<Object*>();
 
@@ -671,10 +713,10 @@ public:
 			*f = new Object();
 			(*f)->objectType = Tt_func_def;
 			(*f)->funcDefExtra = new FuncDefExtra();
-			(*f)->funcDefExtra->func_body = nullptr;
+			(*f)->funcDefExtra->funcBody = nullptr;
 			(*f)->funcDefExtra->parameters = nullptr;
 			(*f)->funcDefExtra->parameterCount = -1;
-			(*f)->funcDefExtra->default_function = (DefaltFunction)i;
+			(*f)->funcDefExtra->defaultFunction = (DefaltFunction)i;
 		}
 	}
 };

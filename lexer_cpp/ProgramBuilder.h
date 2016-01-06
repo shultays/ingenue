@@ -7,7 +7,7 @@
 #include "Tools.h"
 
 
-const int defaultFuncNameVariableIndex = 256*256*256;
+const int defaultFuncNameVariableIndex = 256 * 256 * 256;
 int operatorPrecedences[] = {
 	-1,
 	1, //+
@@ -46,7 +46,7 @@ class ProgramBuilder {
 
 	std::stack<uint32_t> scopeSizeStack;
 	std::stack<uint32_t> varNameCheckStartStack;
-	
+
 	int ignoreGlobals;
 
 	int getVariableIndex(std::string varName, Object* object) {
@@ -55,8 +55,7 @@ class ProgramBuilder {
 			if (varNames[i] == varName) return ((int)i) - varNameCheckStartStack.top();
 		}
 
-		if(ignoreGlobals == 0)
-		{
+		if (ignoreGlobals == 0) {
 			for (int i = 0; i < globalCount; i++) {
 				if (varNames[i] == varName) return -((int)i) - 1;
 			}
@@ -170,7 +169,7 @@ class ProgramBuilder {
 			parameterCount++;
 		}
 		*place = nullptr;
-		object->funcDefExtra->func_body = temp;
+		object->funcDefExtra->funcBody = temp;
 		object->firstChild = nullptr;
 
 		object->funcDefExtra->parameterCount = parameterCount;
@@ -189,16 +188,12 @@ class ProgramBuilder {
 		object->funcCallExtra->name->nextSibling = nullptr;
 		Object** cursor = &object->funcCallExtra->values;
 		temp = *cursor;
-		while(*cursor)
-		{
-			if((*cursor)->objectType == Tt_comma)
-			{
+		while (*cursor) {
+			if ((*cursor)->objectType == Tt_comma) {
 				Object* prev = *cursor;
 				*cursor = (*cursor)->nextSibling;
 				allocator.deleteMemory<Object>(prev);
-			}
-			else
-			{
+			} else {
 				cursor = &(*cursor)->nextSibling;
 			}
 		}
@@ -290,6 +285,11 @@ class ProgramBuilder {
 		Object* object = allocator.getMemory<Object>();
 		object->objectType = tokenData.tokenType;
 		switch (object->objectType) {
+			case Tt_statement:
+			{
+								 object->tokenPtr = &tokenData;
+			}
+				break;
 			case Tt_integer:
 				memcpy(strnull, tokenData.tokenBegin, tokenData.tokenLength);
 				strnull[tokenData.tokenLength] = '\0';
@@ -330,6 +330,7 @@ class ProgramBuilder {
 			case Tt_variable_def:
 				ignoreGlobals++;
 				break;
+
 		}
 
 		return object;
@@ -342,10 +343,6 @@ class ProgramBuilder {
 		Object *firstObject = nullptr;
 		for (unsigned i = 0; i < tokenDataList.size(); i++) {
 			Object* object = buildObject(tokenDataList[i]);
-			if(object->objectType == Tt_func_def)
-			{
-				int a = 5;
-			}
 			if (tokenDataList[i].children.size() > 0) {
 				object->firstChild = buildSubProgram(tokenDataList[i].children);
 			}
@@ -455,12 +452,12 @@ class ProgramBuilder {
 					if (temp) printf(", ");
 				}
 				printf(")\n");
-				printObject(object->funcDefExtra->func_body, level + 1);
+				printObject(object->funcDefExtra->funcBody, level + 1);
 				break;
 			case Tt_func_call:
 				printf("func_call (\n");
 				temp = object->funcCallExtra->values;
-				printObject(object->funcCallExtra->values, level+1);
+				printObject(object->funcCallExtra->values, level + 1);
 				for (int i = 0; i < level * 2; i++) printf(" ");
 				printf(")\n");
 				break;
@@ -476,44 +473,44 @@ class ProgramBuilder {
 		if (object == nullptr) return;
 
 		switch (object->objectType) {
-		case Tt_whileloop:
-			deleteObject(object->whileExtra->cond);
-			deleteObject(object->whileExtra->statements);
-			allocator.deleteMemory<WhileExtra>(object->whileExtra);
-			break;
-		case Tt_dowhileloop:
-			deleteObject(object->doWhileExtra->cond);
-			deleteObject(object->doWhileExtra->statements);
-			allocator.deleteMemory<DoWhileExtra>(object->doWhileExtra);
-			break;
-		case Tt_ifcond:
-			deleteObject(object->ifExtra->cond);
-			deleteObject(object->ifExtra->ifPart);
-			deleteObject(object->ifExtra->elsePart);
-			allocator.deleteMemory<IfExtra>(object->ifExtra);
-			break;
-		case Tt_forloop:
-			deleteObject(object->forExtra->initPart);
-			deleteObject(object->forExtra->condPart);
-			deleteObject(object->forExtra->afterPart);
-			deleteObject(object->forExtra->statements);
-			allocator.deleteMemory<ForExtra>(object->forExtra);
-			break;
-		case Tt_func_def:
-			deleteObject(object->funcDefExtra->parameters);
-			deleteObject(object->funcDefExtra->func_body);
-			allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
-			break;
-		case Tt_func_call:
-			deleteObject(object->funcCallExtra->values);
-			allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
-			break;
-		case Tt_string:
-			allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
-			break;
+			case Tt_whileloop:
+				deleteObject(object->whileExtra->cond);
+				deleteObject(object->whileExtra->statements);
+				allocator.deleteMemory<WhileExtra>(object->whileExtra);
+				break;
+			case Tt_dowhileloop:
+				deleteObject(object->doWhileExtra->cond);
+				deleteObject(object->doWhileExtra->statements);
+				allocator.deleteMemory<DoWhileExtra>(object->doWhileExtra);
+				break;
+			case Tt_ifcond:
+				deleteObject(object->ifExtra->cond);
+				deleteObject(object->ifExtra->ifPart);
+				deleteObject(object->ifExtra->elsePart);
+				allocator.deleteMemory<IfExtra>(object->ifExtra);
+				break;
+			case Tt_forloop:
+				deleteObject(object->forExtra->initPart);
+				deleteObject(object->forExtra->condPart);
+				deleteObject(object->forExtra->afterPart);
+				deleteObject(object->forExtra->statements);
+				allocator.deleteMemory<ForExtra>(object->forExtra);
+				break;
+			case Tt_func_def:
+				deleteObject(object->funcDefExtra->parameters);
+				deleteObject(object->funcDefExtra->funcBody);
+				allocator.deleteMemory<FuncDefExtra>(object->funcDefExtra);
+				break;
+			case Tt_func_call:
+				deleteObject(object->funcCallExtra->values);
+				allocator.deleteMemory<FuncCallExtra>(object->funcCallExtra);
+				break;
+			case Tt_string:
+				allocator.deleteMemory<char>(object->pChar, strlen(object->pChar) + 1);
+				break;
 
-		default:
-			break;
+			default:
+				break;
 		}
 
 		deleteObject(object->nextSibling);
@@ -535,29 +532,26 @@ public:
 		return object;
 	}
 
-	void printProgram(const Object* program) const
-	{
+	void printProgram(const Object* program) const {
 		printObject(program, 1);
 	}
 
 
-	void deleteProgram(Object* program){
+	void deleteProgram(Object* program) {
 		deleteObject(program);
 	}
 
-    void clear(){
+	void clear() {
 		globalCount = 0;
 		varNames.clear();
 		printf("ProgramBuilder alloc = %d\n", allocator.allocated);
-    }
+	}
 
-	void buildStdlib(){
-		for(int i=0; i<Df_count; i++){
+	void buildStdlib() {
+		for (int i = 0; i < Df_count; i++) {
 			int index = getVariableIndex(getDefaultFunctionName(i), nullptr);
 		}
 	}
-
-
 };
 
 

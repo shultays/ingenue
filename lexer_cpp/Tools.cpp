@@ -33,6 +33,7 @@ void buildTools() {
 	defaultFuncNames[Df_print] = "print";
 	defaultFuncNames[Df_scan] = "scan";
 	defaultFuncNames[Df_assert] = "assert";
+	defaultFuncNames[Df_exit] = "exit";
 
 	tokenNames[Tt_whitespace] = "whitespace";
 	tokenNames[Tt_comment_single] = "comment_single";
@@ -83,14 +84,13 @@ const char* getTokenName(TokenType type) {
 	return tokenNames[type];
 }
 
-const char* getDefaultFunctionName(int f){
+const char* getDefaultFunctionName(int f) {
 	return defaultFuncNames[f];
 }
 
-int getDefaultFunctionEnum(const char* name){
-	for(int i=0; i<Df_count; i++){
-		if(strncmp(defaultFuncNames[i], name, strlen(defaultFuncNames[i])) == 0)
-		{
+int getDefaultFunctionEnum(const char* name) {
+	for (int i = 0; i < Df_count; i++) {
+		if (strncmp(defaultFuncNames[i], name, strlen(defaultFuncNames[i])) == 0) {
 			return (DefaltFunction)i;
 		}
 	}
@@ -105,8 +105,7 @@ bool isOperatorUnion(OperatorType op) {
 	return op >= Op_inc;
 }
 
-int floatToStr(float num, char* str, int max)
-{
+int floatToStr(float num, char* str, int max) {
 #ifdef _WIN32
 	return sprintf_s(str, max, "%f", num);
 #else
@@ -114,8 +113,7 @@ int floatToStr(float num, char* str, int max)
 #endif
 }
 
-int intToStr(int num, char* str, int max)
-{
+int intToStr(int num, char* str, int max) {
 #ifdef _WIN32
 	return sprintf_s(str, max, "%d", num);
 #else

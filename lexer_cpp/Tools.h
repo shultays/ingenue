@@ -87,7 +87,7 @@ enum DefaltFunction {
 	Df_print,
 	Df_scan,
 	Df_assert,
-
+	Df_exit,
 	Df_count,
 	Df_invalid
 };
@@ -147,8 +147,8 @@ typedef struct {
 
 typedef struct {
 	Object *parameters;
-	Object *func_body;
-	DefaltFunction default_function;
+	Object *funcBody;
+	DefaltFunction defaultFunction;
 	int32_t parameterCount;
 }FuncDefExtra;
 
@@ -188,6 +188,7 @@ public:
 		DoWhileExtra *doWhileExtra;
 		FuncDefExtra *funcDefExtra;
 		FuncCallExtra *funcCallExtra;
+		Token* tokenPtr;
 	};
 };
 
