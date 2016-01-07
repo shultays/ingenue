@@ -1,0 +1,48 @@
+while(0) assert(0);
+
+a = 2;
+
+while(a>0){
+    a--;
+}
+
+assert(a == 0);
+
+
+a = 10;
+
+while(a>0){
+    a--;
+    if(a==3){
+        break;
+    }
+}
+assert(a==3);
+
+
+a = 0;
+c = 0;
+while(a < 20){
+    a++;
+    if(a==10) continue;
+    if(a==15) continue;
+    c = c + a;
+}
+assert(c == 185);
+
+
+a = 0;
+c = 0;
+
+while(a < 20){
+    a++;
+    if(a==10) continue;
+    if(a==15) continue;
+    b = 10;
+    while(b-->0){
+        c += b;
+        if(b == 5) continue;
+    }
+    c = c + a;
+}
+assert(c==995);

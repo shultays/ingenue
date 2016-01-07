@@ -1,0 +1,48 @@
+a = 3;
+b = 2;
+c = a + b;
+assert(c == 5);
+d = c * 2 - a + b / 2;
+assert(d == 8);
+
+
+x = 1.0;
+y = 0.5;
+z = x + y;
+assert(z > 1.49 && z < 1.51);
+
+z = z + 1;
+
+assert(z > 2.49 && z < 2.51);
+
+z = z * 2.0;
+
+assert(z > 4.99 && z < 5.01); 
+
+a = 0;
+a++;
+assert(a == 1);
+assert(a++ == 1);
+assert(a == 2);
+assert(++a == 3);
+assert(a==3);
+
+b = a++;
+assert(b==3);
+assert(a==4);
+
+b = a++ + 2;
+assert(b == 6);
+
+
+a = 4;
+b = 3;
+c = a%b;
+assert(c==1);
+
+a = 0;
+assert(a==0);
+a = 1.0;
+assert(a==1.0);
+a = 0;
+assert(a==0);

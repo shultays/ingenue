@@ -1,0 +1,15 @@
+a = "hello";
+assert(a == "hello");
+assert(a != "bye");
+
+b = " ";
+c = "world"
+
+d = a + b + c + "!";
+
+assert(d == "hello world!");
+
+c = c + 1;
+
+assert(c == "world1");
+

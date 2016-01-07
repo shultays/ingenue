@@ -1,0 +1,13 @@
+//this is a comment!
+
+a = 3;
+//a = 5;
+assert(a==3);
+
+/*
+a = 42;
+// hello world!
+*/
+assert(a==3);
+
+//assert(0);
